@@ -62,7 +62,7 @@ def main():
                     if move in validMoves:
                         gs.makeMove(move)
                         moveMade = True
-                    gs.makeMove(move)
+                    # Personal move: removed "gs.makeMove(True) which was outside the if move"
                     sqSelected = () # To help the user reset the clicks
                     playerClicks = []
 

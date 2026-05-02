@@ -12,12 +12,16 @@ class GameState():
             ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
-            ["--", "--", "--", "--", "--", "--", "--", "--"],
+            ["--", "--", "--", "bp", "--", "--", "--", "--"],
             ["wp", "wp", "wp", "wp", "wp", "wp", "wp", "wp"],
             ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"],]
             # We used 'b' and 'w' to represent the color black and white respectively, then the capital letters are the pieces, 
             # note 'N' is for knight and 'K' for king
             # The "--" represents an empty space with no piece
+        self.moveFunctions = {'p': self.getPawnMoves, 'R': self.getRookMoves, 'N': self.getKnightMoves,
+                              'B': self.getBishopMoves, 'Q': self.getQueenMoves, 'K': self.getKingMoves}
+        
+        
         self.whiteToMove = True
         self.movelog = []
 
@@ -51,28 +55,52 @@ class GameState():
     # All moves without considering checks
 
     def getAllPossibleMoves(self):
-        moves = [Move((6,4), (4,4), self.board)]
+        moves = []
         for r in range(len(self.board)): # Number of rows
             for c in range(len(self.board[r])): # Number of columns in given row
                 turn = self.board[r][c][0]
-                if (turn == 'w' and self.whiteToMove) and (turn == 'b' and not self.whiteToMove):
+                if (turn == 'w' and self.whiteToMove) or (turn == 'b' and not self.whiteToMove):
                     piece = self.board[r][c][1]
-                    if piece == 'p':
-                        self.getPawnMoves(r, c, moves)
-                    elif piece == 'R':
-                        self.getRookMoves(r, c, moves)
+                    self.moveFunctions[piece](r, c, moves)  # Calls the appropritate move function based on piece type
 
         return moves
     # Get all the pawn moves for the pawn located at row, col and add these moves to the list
 
     def getPawnMoves(self, r, c, moves):
+        if self.whiteToMove: # White pawn moves
+            if self.board[r-1][c] == "--": # for a 1 square pawn advance
+                moves.append(Move((r, c), (r-1, c), self.board))
+                if r == 6 and self.board[r-2][c] == "--": # 2 square move
+                    moves.append(Move((r, c), (r-2, c), self.board))
+            if c-1 >= 0:  #Capture to the left
+                if self.board[r-1][c-1][0] == 'b':  #Enemy piece to capture
+                    moves.append(Move((r, c), (r-1, c-1), self.board))
+            if c+1 <= 7:  # Captures to the right
+                if self.board[r-1][c+1][0] == 'b': # Enemy piece to capture
+                    moves.append(Move((r, c), (r-1, c+1), self.board))
+
+        else:
+            pass  
+
+
+
+
+    def getRookMoves(self, r, c, moves): # Get all rook moves
         pass
 
-    def getRookMoves(self, r, moves): # Get all rook moves
+    
+    def getKnightMoves(self, r, c, moves): # Get all knight moves
+        pass
+
+    def getBishopMoves(self, r, c, moves): # Get all bishop moves
+        pass
+
+    def getQueenMoves(self, r, c, moves): # Get all queen moves
         pass
 
 
-
+    def getKingMoves(self, r, c, moves): # Get all king moves
+        pass
 
 
 class Move():
@@ -94,7 +122,7 @@ class Move():
         self.pieceMoved = board[self.startRow][self.startCol] # We are trying to keep track of information right here
         self.pieceCaptured = board[self.endRow][self.endCol]
         self.moveID = self.startRow * 1000 + self.startCol * 100 + self.endRow * 10 + self.endCol
-        print(self.moveID)
+
     # Overriding the equals method
     def __eq__(self, other):
         if isinstance(other, Move):
