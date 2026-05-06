@@ -80,7 +80,16 @@ class GameState():
                     moves.append(Move((r, c), (r-1, c+1), self.board))
 
         else:
-            pass  
+            if self.board[r+1][c] == "--": # for a 1 square pawn advance
+                moves.append(Move((r, c), (r+1, c), self.board))
+                if r == 1 and self.board[r+2][c] == "--": # a 2 square move
+                    moves.append(Move((r, c), (r+2, c), self.board))
+            if c-1 >= 0: # Capture to the left
+                if self.board[r+1][c-1][0] == 'w': # Enemy piece to capture
+                    moves.append(Move((r, c), (r+1, c-1), self.board))
+            if c+1 <= 7: #Captures to the right
+                if self.board[r+1][c+1][0] == 'w':
+                    moves.append(Move((r, c), (r+1, c+1), self.board))
 
 
 
