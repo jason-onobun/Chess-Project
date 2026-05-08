@@ -62,9 +62,10 @@ def main():
                     if move in validMoves:
                         gs.makeMove(move)
                         moveMade = True
-                    # Personal move: removed "gs.makeMove(True) which was outside the if move"
-                    sqSelected = () # To help the user reset the clicks
-                    playerClicks = []
+                        sqSelected = () # To help the user reset the clicks
+                        playerClicks = []
+                    else:
+                        playerClicks = [sqSelected]  #if lets say you mistakenly clicked a piece you do not want to move
 
             # Key handler
             elif e.type == p.KEYDOWN:
