@@ -23,6 +23,10 @@ class GameState():
         
         self.whiteToMove = True
         self.movelog = []
+        self.whiteKingLocation = (7, 4)
+        self.blackKingLocation = (0, 4)
+        self.checkMate = False
+        self.staleMate = False
 
     
     # Takes a move as a parameter and executes it (This will not work for castling and en-passant)
@@ -31,6 +35,12 @@ class GameState():
         self.board[move.endRow][move.endCol] = move.pieceMoved
         self.movelog.append(move) # log the move so we can undo it later
         self.whiteToMove = not self.whiteToMove # To help with swapping turns
+        
+        #Update the king's position if moved
+        if move.pieceMoved == "wK":
+            self.whiteKingLocation = (move.endRow, move.endCol)
+        elif move.pieceMoved == "bK":
+            self.blackKingLocation = (move.endRow, move.endCol)
 
     
     # This will undo the last move made
@@ -40,7 +50,12 @@ class GameState():
             self.board[move.startRow][move.startCol] = move.pieceMoved
             self.board[move.endRow][move.endCol] = move.pieceCaptured
             self.whiteToMove = not self.whiteToMove # Switch turns back
-
+            
+            #This would update the king's position if moved
+            if move.pieceMoved == "wK":
+                self.whiteKingLocation = (move.startRow, move.startCol)
+            elif move.pieceMoved == "bK":
+                self.blackKingLocation = (move.startRow, move.startCol)
 
 
 
@@ -49,8 +64,45 @@ class GameState():
     # All moves considering checks
 
     def getValidMoves(self):
-        return self.getAllPossibleMoves() # for now we won't worry about checks
+        moves = self.getAllPossibleMoves()
+        for i in range(len(moves)-1, -1, -1):  #Weird thing i observed. So we want this for when we are iterating. (long explanation for why i did this mehn)
+        # It would help with iterating from the back
 
+            self.makeMove(moves[i])
+            self.whiteToMove = not self.whiteToMove
+            if self.inCheck():
+                moves.remove(moves[i])  # If they attack your king, it isn't a valid move
+            self.whiteToMove = not self.whiteToMove
+            self.undoMove()
+        if len(moves) == 0:  #for either checkmate or stalemate
+            if self.inCheck():
+                self.checkMate = True
+            else:
+                self.staleMate = True
+        else:
+            self.checkMate = False
+            self.staleMate = False
+        return moves
+
+    
+    def inCheck(self):  #determine if the current player is in check
+        if self.whiteToMove:
+            return self.squareUnderAttack(self.whiteKingLocation[0], self.whiteKingLocation[1])
+        else:
+            return self.squareUnderAttack(self.blackKingLocation[0], self.blackKingLocation[1])
+
+    def squareUnderAttack(self, r, c):  #Determine if th enemy can attack the square r, c
+        self.whiteToMove = not self.whiteToMove #Switch to opponent's turn
+        oppMoves = self.getAllPossibleMoves()
+        self.whiteToMove = not self.whiteToMove #switch turns back
+        for move in oppMoves:
+            if move.endRow == r and move.endCol == c:  #Means square is under attack
+                return True
+
+        return False
+    
+    
+    
     # All moves without considering checks
 
     def getAllPossibleMoves(self):
