@@ -48,12 +48,12 @@ class GameState():
 
         # Pawn promotion 
         if move.isPawnPromotion:
-            self.board[move.endRow][move.endCol] == move.pieceMoved[0] + 'Q'
+            self.board[move.endRow][move.endCol] = move.pieceMoved[0] + 'Q'
 
         if move.isEnpassantMove:
             self.board[move.startRow][move.endCol] = "--"
 
-        if move.pieceMoved[1] == "p" and abs (move.startRow - move.endRow) == 2:
+        if move.pieceMoved[1] == "p" and abs(move.startRow - move.endRow) == 2:
             self.enpassantPossible = ((move.startRow + move.endRow)//2, move.startCol)
         else:
             self.enpassantPossible = ()
@@ -73,7 +73,7 @@ class GameState():
                 self.blackKingLocation = (move.startRow, move.startCol)
 
             if  move.isEnpassantMove:
-                self.board[move.endRow][move.endCol] == "--"
+                self.board[move.endRow][move.endCol] = "--"
                 self.board[move.startRow][move.endCol] = move.pieceCaptured
                 self.enpassantPossible = (move.endRow, move.endCol)
 
@@ -187,9 +187,9 @@ class GameState():
                 if self.board[r-1][c+1][0] == 'b': # Enemy piece to capture
                     if not piecePinned or pinDirection == (-1, 1):
                         moves.append(Move((r, c), (r-1, c+1), self.board))
-                    elif (r-1, c+1) == self.enpassantPossible:
-                        if not piecePinned or pinDirection == (-1, -1):
-                            moves.append(Move((r, c), (r-1, c-1), self.board, isEnpassantMove= True))
+                elif (r-1, c+1) == self.enpassantPossible:
+                    if not piecePinned or pinDirection == (-1, 1):
+                        moves.append(Move((r, c), (r-1, c+1), self.board, isEnpassantMove= True))
 
         else: # Black pawn moves
             if self.board[r+1][c] == "--": # for a 1 square pawn advance
@@ -202,9 +202,9 @@ class GameState():
                 if self.board[r+1][c-1][0] == 'w': # Enemy piece to capture
                     if not piecePinned or pinDirection == (1, -1):
                         moves.append(Move((r, c), (r+1, c-1), self.board))
-                    elif (r+1, c-1) == self.enpassantPossible:
-                        if not piecePinned or pinDirection == (1, -1):
-                            moves.append(Move((r, c), (r+1, c-1), self.board, isEnpassantMove=True))
+                elif (r+1, c-1) == self.enpassantPossible:
+                    if not piecePinned or pinDirection == (1, -1):
+                        moves.append(Move((r, c), (r+1, c-1), self.board, isEnpassantMove=True))
             if c+1 <= 7: #Captures to the right
                 if self.board[r+1][c+1][0] == 'w':
                     if not piecePinned or pinDirection == (1, 1):
@@ -269,7 +269,7 @@ class GameState():
         piecePinned = False
         pinDirection = ()
         for i in range(len(self.pins)-1, -1, -1):
-            if self.pins[i][0] == r and self.pins[i][i] == c:
+            if self.pins[i][0] == r and self.pins[i][1] == c:
                 piecePinned = True
                 pinDirection = (self.pins[i][2], self.pins[i][3])
                 self.pins.remove(self.pins[i])
