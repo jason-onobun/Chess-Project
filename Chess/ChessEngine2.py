@@ -7,14 +7,14 @@ class GameState():
     def __init__(self):
         # The board is an 8x8 list, each element in the list has 2 characters
         self.board = [
-            ["bR", "--", "--", "--", "bK", "--", "--", "bR"], 
+            ["bR", "bN", "bB", "bQ", "bK", "bB", "bN", "bR"], 
             ["bp", "bp", "bp", "bp", "bp", "bp", "bp", "bp"],
-            ["bB", "--", "bN", "bQ", "--", "bN", "--", "bB"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
-            ["wB", "--", "wN", "wQ", "--", "wN", "--", "wB"],
+            ["--", "--", "--", "--", "--", "--", "--", "--"],
+            ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["wp", "wp", "wp", "wp", "wp", "wp", "wp", "wp"],
-            ["wR", "--", "--", "--", "wK", "--", "--", "wR"],]
+            ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"],]
             # We used 'b' and 'w' to represent the color black and white respectively, then the capital letters are the pieces, 
             # note 'N' is for knight and 'K' for king
             # The "--" represents an empty space with no piece
@@ -25,8 +25,8 @@ class GameState():
         self.movelog = []
         self.whiteKingLocation = (7, 4)
         self.blackKingLocation = (0, 4)
-        self.checkMate = False
-        self.staleMate = False
+        self.checkmate = False
+        self.stalemate = False
         self.enpassantPossible = () #Coordiantes for the s2quare where the en passant capture is possible
         self.currentCastlingRights = CastleRights(True, True, True, True)
         self.castleRightsLog = [CastleRights(self.currentCastlingRights.wks, self.currentCastlingRights.bks, 
@@ -168,12 +168,12 @@ class GameState():
             self.undoMove()
         if len(moves) == 0:  #for either checkmate or stalemate
             if self.inCheck():
-                self.checkMate = True
+                self.checkmate = True
             else:
-                self.staleMate = True
+                self.stalemate = True
         else:
-            self.checkMate = False
-            self.staleMate = False
+            self.checkmate = False
+            self.stalemate = False
 
 
         self.enpassantPossible = temporaryEnpassantPossible
