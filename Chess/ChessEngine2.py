@@ -7,14 +7,14 @@ class GameState():
     def __init__(self):
         # The board is an 8x8 list, each element in the list has 2 characters
         self.board = [
-            ["bR", "bN", "bB", "bQ", "bK", "bB", "bN", "bR"], 
+            ["bR", "--", "--", "--", "bK", "--", "--", "bR"], 
             ["bp", "bp", "bp", "bp", "bp", "bp", "bp", "bp"],
+            ["bB", "--", "bN", "bQ", "--", "bN", "--", "bB"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
-            ["--", "--", "--", "--", "--", "--", "--", "--"],
-            ["--", "--", "--", "--", "--", "--", "--", "--"],
+            ["wB", "--", "wN", "wQ", "--", "wN", "--", "wB"],
             ["wp", "wp", "wp", "wp", "wp", "wp", "wp", "wp"],
-            ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"],]
+            ["wR", "--", "--", "--", "wK", "--", "--", "wR"],]
             # We used 'b' and 'w' to represent the color black and white respectively, then the capital letters are the pieces, 
             # note 'N' is for knight and 'K' for king
             # The "--" represents an empty space with no piece
@@ -28,7 +28,9 @@ class GameState():
         self.checkMate = False
         self.staleMate = False
         self.enpassantPossible = () #Coordiantes for the s2quare where the en passant capture is possible
-
+        self.currentCastlingRights = CastleRights(True, True, True, True)
+        self.castleRightsLog = [CastleRights(self.currentCastlingRights.wks, self.currentCastlingRights.bks, 
+                                             self.currentCastlingRights.wqs, self.currentCastlingRights.bqs)]
     
     # Takes a move as a parameter and executes it (This will not work for castling and en-passant)
     def makeMove(self, move):
@@ -56,6 +58,23 @@ class GameState():
             self.enpassantPossible = ((move.startRow + move.endRow)//2, move.startCol)
         else:
             self.enpassantPossible = ()
+
+
+        # Castle Move
+        if move.isCastleMove:
+            if move.endCol - move.startCol == 2: # kingside castle
+                self.board[move.endRow][move.endCol-1] = self.board[move.endRow][move.endCol+1]
+                self.board[move.endRow][move.endCol+1] = "--" # Erase the old rook
+            else: # Queenside caste
+                self.board[move.endRow][move.endCol+1] = self.board[move.endRow][move.endCol-2] # Moves the rook
+                self.board[move.endRow][move.endCol-2] = "--"
+
+
+        # Update castling rights = wheneever it is a rook or a king move
+        self.updateCastleRights(move)
+        self.castleRightsLog.append(CastleRights(self.currentCastlingRights.wks, self.currentCastlingRights.bks, 
+                                             self.currentCastlingRights.wqs, self.currentCastlingRights.bqs))
+
         
 
 
@@ -85,6 +104,42 @@ class GameState():
                 self.enpassantPossible = () 
 
 
+            # Undo Castle Rights
+            self.castleRightsLog.pop()  # get rid of the new castle rights from the move we are undoig
+            newRights = self.castleRightsLog[-1] # set the current castle rights to the last one in the list
+            self.currentCastlingRights = CastleRights(newRights.wks, newRights.bks, newRights.wqs, newRights.bqs)
+            # Undo the casgtle move
+            if move.isCastleMove:
+                if move.endCol - move.startCol == 2: #kingside
+                    self.board[move.endRow][move.endCol+1] = self.board[move.endRow][move.endCol-1]
+                    self.board[move.endRow][move.endCol-1] = "--"
+                else: # Queenside
+                    self.board[move.endRow][move.endCol-2] = self.board[move.endRow][move.endCol+1]
+                    self.board[move.endRow][move.endCol+1] = "--"
+
+
+
+
+    def updateCastleRights(self, move):  #to help update castle rights
+        if move.pieceMoved == "wK":
+            self.currentCastlingRights.wks = False
+            self.currentCastlingRights.wqs = False
+        elif move.pieceMoved == "bK":
+            self.currentCastlingRights.bks = False
+            self.currentCastlingRights.bqs = False
+        elif move.pieceMoved == "wR":
+            if move.startRow == 7:
+                if move.startCol == 0: #left rook (white's pov)
+                    self.currentCastlingRights.wqs = False
+                elif move.startCol == 7: # Right rook (white's pov)
+                    self.currentCastlingRights.wks = False
+        elif move.pieceMoved == "bR":
+            if move.startRow == 0:
+                if move.startCol == 0: # left rook (white's pov)
+                    self.currentCastlingRights.bqs = False
+                elif move.startCol == 7: # right rook (white's pov)
+                    self.currentCastlingRights.bks = False
+
 
 
 
@@ -92,7 +147,16 @@ class GameState():
 
     def getValidMoves(self):
         temporaryEnpassantPossible = self.enpassantPossible  # This would help save the value for when we are generating our moves
-        moves = self.getAllPossibleMoves()
+        temporaryCastleRights = CastleRights(self.currentCastlingRights.wks, self.currentCastlingRights.bks,
+                                             self.currentCastlingRights.wqs, self.currentCastlingRights.bqs) # Copy the current castling rights
+       
+        moves = self.getAllPossibleMoves() # Generate all possible moves
+        if self.whiteToMove:
+            self.getCastleMoves(self.whiteKingLocation[0], self.whiteKingLocation[1], moves)
+        else:
+            self.getCastleMoves(self.blackKingLocation[0], self.blackKingLocation[1], moves)
+        
+        
         for i in range(len(moves)-1, -1, -1):  #Weird thing i observed. So we want this for when we are iterating. (long explanation for why i did this mehn)
         # It would help with iterating from the back
 
@@ -113,8 +177,8 @@ class GameState():
 
 
         self.enpassantPossible = temporaryEnpassantPossible
+        self.currentCastlingRights = temporaryCastleRights
         return moves
-
     
     def inCheck(self):  #determine if the current player is in check
         if self.whiteToMove:
@@ -252,6 +316,39 @@ class GameState():
                     moves.append(Move((r, c), (endRow, endCol), self.board))
 
 
+        
+
+    # Generate all valid castle moves for the king at (r,c) and add them to the list of moves
+    def getCastleMoves(self, r, c, moves):
+        if self.squareUnderAttack(r, c):
+            return # We can't castle while in check
+        if (self.whiteToMove and self.currentCastlingRights.wks) or (not self.whiteToMove and self.currentCastlingRights.bks):
+            self.getKingsideCastleMoves(r, c, moves)
+        if (self.whiteToMove and self.currentCastlingRights.wqs) or (not self.whiteToMove and self.currentCastlingRights.bqs):
+            self.getQueensideCastleMoves(r, c, moves)
+
+
+
+    def getKingsideCastleMoves(self, r, c, moves):
+        if self.board[r][c+1] == "--" and self.board[r][c+2] == "--":
+            if not self.squareUnderAttack(r, c+1) and not self.squareUnderAttack(r, c+2):
+                moves.append(Move((r, c), (r, c+2), self.board, isCastleMove=True))
+
+    def getQueensideCastleMoves(self, r, c, moves):
+        if self.board[r][c-1] == "--" and self.board[r][c-2] == "--" and self.board[r][c-3] == "--":
+            if not self.squareUnderAttack(r, c-1) and not self.squareUnderAttack(r, c-2):
+                moves.append(Move((r, c), (r, c-2), self.board, isCastleMove=True)) 
+
+class CastleRights():
+    def __init__(self, wks, bks, wqs, bqs):
+        self.wks = wks
+        self.bks = bks
+        self.wqs = wqs
+        self.bqs = bqs
+
+
+
+
 class Move():
     # maps keys to values
     # key: value
@@ -263,7 +360,7 @@ class Move():
     colsToFiles = {v: k for k, v in filesToCols.items()}
 
 
-    def __init__(self, startSq, endSq, board, isEnpassantMove=False):
+    def __init__(self, startSq, endSq, board, isEnpassantMove=False, isCastleMove=False):
         self.startRow = startSq[0]
         self.startCol = startSq[1]
         self.endRow = endSq[0]
@@ -278,6 +375,11 @@ class Move():
         self.isEnpassantMove = isEnpassantMove
         if self.isEnpassantMove:
             self.pieceCaptured = "wp" if self.pieceMoved == "bp" else "bp"
+        
+        # Castle Move
+        self.isCastleMove = isCastleMove
+        
+        
         self.moveID = self.startRow * 1000 + self.startCol * 100 + self.endRow * 10 + self.endCol
 
     # Overriding the equals method

@@ -2,7 +2,7 @@
 # and displaying the current GameState object
 
 import pygame as p
-import ChessEngine
+import ChessEngine2
 
 WIDTH = HEIGHT = 512 #400 could work
 DIMENSION = 8 #dimensions of the chess board are 8x8
@@ -28,7 +28,7 @@ def main():
     screen = p.display.set_mode((WIDTH, HEIGHT))
     clock = p.time.Clock()
     screen.fill(p.Color("white"))
-    gs = ChessEngine.GameState()
+    gs = ChessEngine2.GameState()
     validMoves = gs.getValidMoves()
     moveMade = False #flgag variable for when a move is made
 
@@ -57,7 +57,7 @@ def main():
                     sqSelected = (row, col)
                     playerClicks.append(sqSelected) #Appened for both 1st and 2nd clicks
                 if len(playerClicks) == 2: #after second click
-                    move = ChessEngine.Move(playerClicks[0], playerClicks[1], gs.board)
+                    move = ChessEngine2.Move(playerClicks[0], playerClicks[1], gs.board)
                     print(move.getChessNotation())
                     for i in range(len(validMoves)):
                         if move == validMoves[i]:
