@@ -4,6 +4,10 @@
 import pygame as p
 import ChessEngine2, chessAI
 
+from multiprocessing import Process, Queue
+
+
+
 BOARD_WIDTH = BOARD_HEIGHT = 512 #400 could work
 MOVE_LOG_PANEL_WIDTH = 250
 MOVE_LOG_PANEL_HEIGHT = BOARD_HEIGHT
@@ -44,7 +48,10 @@ def main():
 
     gameOver = False
     playerOne = True # If a human is playing white, then this will be true. if an AI is playing, then false
-    playerTwo = True # Same as above but for black
+    playerTwo = False # Same as above but for black
+    AIThinking = False
+    moveFinderProcess = None
+    moveUndone = False
     while running:
         humanTurn = (gs.whiteToMove and playerOne) or (not gs.whiteToMove and playerTwo)
         for e in p.event.get():
@@ -81,9 +88,15 @@ def main():
             elif e.type == p.KEYDOWN:
                 if e.key == p.K_z: #Undo when 'z' is pressed
                     gs.undoMove()
+                    sqSelected = ()
+                    playerClicks = []
                     moveMade = True
                     animate = False
                     gameOver = False
+                    if AIThinking:
+                        moveFinderProcess.terminate()
+                        AIThinking = False
+                    moveUndone = True
                 if e.key == p.K_r:
                     gs = ChessEngine2.GameState()
                     validMoves = gs.getValidMoves()
@@ -92,17 +105,28 @@ def main():
                     moveMade = False
                     animate = False
                     gameOver = False
-
+                    if AIThinking:
+                        moveFinderProcess.terminate()
+                        AIThinking = False
+                    moveUndone = True
 
         # AI move finder
-        if not gameOver and not humanTurn:
-            AIMove = chessAI.findBestMove(gs, validMoves)
-            if AIMove is None:
-                AIMove = chessAI.findRandomMove(validMoves)
-            AIMove.setDisambiguation(validMoves)
-            gs.makeMove(AIMove)
-            moveMade = True
-            animate = True
+        if not gameOver and not humanTurn and not moveUndone:
+            if not AIThinking:
+                AIThinking = True
+                returnQueue = Queue() # used to pass data between threads
+                moveFinderProcess = Process(target=chessAI.findBestMove, args=(gs, validMoves, returnQueue))
+                moveFinderProcess.start() # Call chessAI findBestMove(gs, validMoves, returnQueue)
+ 
+            if not moveFinderProcess.is_alive():
+                AIMove = returnQueue.get()
+                if AIMove is None:
+                    AIMove = chessAI.findRandomMove(validMoves)
+                AIMove.setDisambiguation(validMoves)
+                gs.makeMove(AIMove)
+                moveMade = True
+                animate = True
+                AIThinking = False
 
 
         if moveMade:
@@ -111,6 +135,7 @@ def main():
             validMoves = gs.getValidMoves()
             moveMade = False
             animate = False
+            moveUndone = False
 
         drawGameState(screen, gs, validMoves, sqSelected, moveLogFont)
         if gs.checkmate or gs.stalemate:
