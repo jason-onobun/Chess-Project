@@ -90,7 +90,9 @@ def main():
 
         # AI move finder
         if not gameOver and not humanTurn:
-            AIMove = chessAI.findRandomMove(validMoves)
+            AIMove = chessAI.findBestMove(gs, validMoves)
+            if AIMove is None:
+                AIMove = chessAI.findRandomMove(validMoves)
             gs.makeMove(AIMove)
             moveMade = True
             animate = True
