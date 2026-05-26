@@ -28,6 +28,7 @@ class GameState():
         self.checkmate = False
         self.stalemate = False
         self.enpassantPossible = () #Coordiantes for the s2quare where the en passant capture is possible
+        self.enpassantPossibleLog = [self.enpassantPossible]
         self.currentCastlingRights = CastleRights(True, True, True, True)
         self.castleRightsLog = [CastleRights(self.currentCastlingRights.wks, self.currentCastlingRights.bks, 
                                              self.currentCastlingRights.wqs, self.currentCastlingRights.bqs)]
@@ -69,7 +70,7 @@ class GameState():
                 self.board[move.endRow][move.endCol+1] = self.board[move.endRow][move.endCol-2] # Moves the rook
                 self.board[move.endRow][move.endCol-2] = "--"
 
-
+        self.enpassantPossibleLog.append(self.enpassantPossible)
         # Update castling rights = wheneever it is a rook or a king move
         self.updateCastleRights(move)
         self.castleRightsLog.append(CastleRights(self.currentCastlingRights.wks, self.currentCastlingRights.bks, 
@@ -97,11 +98,9 @@ class GameState():
             if move.isEnpassantMove:
                 self.board[move.endRow][move.endCol] = "--" # Leave landing square blank
                 self.board[move.startRow][move.endCol] = move.pieceCaptured
-                self.enpassantPossible = (move.endRow, move.endCol)
             
-            # Undo 2 square pawn advance
-            if move.pieceMoved[1] == "p" and abs(move.startRow - move.endRow) == 2:
-                self.enpassantPossible = () 
+            self.enpassantPossibleLog.pop()
+            self.enpassantPossible = self.enpassantPossibleLog[-1]
 
 
             # Undo Castle Rights
@@ -142,7 +141,19 @@ class GameState():
                 elif move.startCol == 7: # right rook (white's pov)
                     self.currentCastlingRights.bks = False
 
-
+        # if a rook is captured
+        if move.pieceCaptured == "wR":
+            if move.endRow == 7:
+                if move.endCol == 0:
+                    self.currentCastlingRights.wqs = False
+                elif move.endCol == 7:
+                    self.currentCastlingRights.wks = False
+        elif move.pieceCaptured == "bR":
+            if move.endRow == 0:
+                if move.endCol == 0:
+                    self.currentCastlingRights.bqs = False
+                elif move.endCol == 7:
+                    self.currentCastlingRights.bks = False
 
 
     # All moves considering checks
@@ -165,7 +176,7 @@ class GameState():
             self.makeMove(moves[i])
             self.whiteToMove = not self.whiteToMove
             if self.inCheck():
-                moves.remove(moves[i])  # If they attack your king, it isn't a valid move
+                del moves[i]  # If they attack your king, it isn't a valid move
             self.whiteToMove = not self.whiteToMove
             self.undoMove()
         if len(moves) == 0:  #for either checkmate or stalemate
@@ -369,6 +380,7 @@ class Move():
         self.endCol = endSq[1]
         self.pieceMoved = board[self.startRow][self.startCol] # We are trying to keep track of information right here
         self.pieceCaptured = board[self.endRow][self.endCol]
+
         
         # PAWN PROMOTION
         self.isPawnPromotion = (self.pieceMoved == "wp" and self.endRow == 0) or (self.pieceMoved == "bp" and self.endRow == 7)  # THis enables for pawn promotion
@@ -382,7 +394,10 @@ class Move():
         self.isCastleMove = isCastleMove
         
         
+        self.isCapture = self.pieceCaptured != "--"
+        
         self.moveID = self.startRow * 1000 + self.startCol * 100 + self.endRow * 10 + self.endCol
+        self.disambiguator = ""
 
     # Overriding the equals method
     def __eq__(self, other):
@@ -391,8 +406,61 @@ class Move():
         return False
 
 
+    def setDisambiguation(self, all_moves):
+        if self.pieceMoved[1] == 'p' or self.isCastleMove:
+            return
+
+        # Find other pieces of the same type that can also reach our destination
+        rivals = [
+            m for m in all_moves
+            if m != self
+            and m.pieceMoved == self.pieceMoved   # same colour + piece type
+            and m.endRow == self.endRow           # same destination square
+            and m.endCol == self.endCol
+        ]
+
+        if not rivals:
+            self.disambiguator = ""
+            return
+
+        # If no rival shares our file, the file letter alone is enough
+        if not any(m.startCol == self.startCol for m in rivals):
+            self.disambiguator = Move.colsToFiles[self.startCol]
+        # If no rival shares our rank, the rank number is enough
+        elif not any(m.startRow == self.startRow for m in rivals):
+            self.disambiguator = Move.rowsToRanks[self.startRow]
+        # Extremely rare (e.g. three queens) — need both
+        else:
+            self.disambiguator = (Move.colsToFiles[self.startCol]
+                                + Move.rowsToRanks[self.startRow])
+
+
     def getChessNotation(self):
-        return self.getRankFile(self.startRow, self.startCol) + self.getRankFile(self.endRow, self.endCol)
+        return str(self)
 
     def getRankFile(self, r, c):
         return self.colsToFiles[c] + self.rowsToRanks[r]
+    
+    # Overriding the str() function
+    def __str__(self):
+        # castle move
+        if self.isCastleMove:
+            return "O-O" if self.endCol == 6 else "O-O-O"
+        
+        endSquare = self.getRankFile(self.endRow, self.endCol)
+
+        # pAwn moves
+        if self.pieceMoved[1] == "p":
+            if self.isCapture:
+                return self.colsToFiles[self.startCol] + "x" + endSquare
+            else:
+                return endSquare
+
+        moveString = self.pieceMoved[1] + self.disambiguator
+        if self.isCapture:
+            moveString += "x"
+        return moveString + endSquare
+        
+
+
+

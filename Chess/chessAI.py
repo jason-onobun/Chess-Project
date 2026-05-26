@@ -54,7 +54,6 @@ def findBestMove(gs, validMoves):  # helper method to help us make the first rep
     #findMoveMinMax(gs, validMoves, DEPTH, gs.whiteToMove)
     #findMoveNegaMax(gs, validMoves, DEPTH, 1 if gs.whiteToMove else -1)
     findMoveNegaMaxAlphaBeta(gs, validMoves, DEPTH, -CHECKMATE, CHECKMATE, 1 if gs.whiteToMove else -1)
-    print(counter)
     return nextMove
 
 
