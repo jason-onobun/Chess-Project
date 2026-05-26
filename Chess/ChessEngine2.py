@@ -48,7 +48,7 @@ class GameState():
         
         # Pawn promotion
         if move.isPawnPromotion:
-            self.board[move.endRow][move.endCol] = move.pieceMoved[0] + 'Q'
+            self.board[move.endRow][move.endCol] = move.pieceMoved[0] + move.promotionChoice
 
         # En Passant
         if move.isEnpassantMove:
@@ -226,37 +226,51 @@ class GameState():
     # Get all the pawn moves for the pawn located at row, col and add these moves to the list
 
     def getPawnMoves(self, r, c, moves):
+        promotionPieces = ['Q', 'R', 'B', 'N']
+        def addPawnMove(startSq, endSq, board, isEnpassant=False):
+            # Expan promotion squares into 4 moves or normal squares into 1.
+            testMove = Move(startSq, endSq, board, isEnpassantMove=isEnpassant)
+            if testMove.isPawnPromotion:
+                for piece in promotionPieces:
+                    moves.append(Move(startSq, endSq, board,
+                                      isEnpassantMove=isEnpassant,
+                                      promotionChoice=piece))
+            else:
+                moves.append(testMove)
+
+
         if self.whiteToMove: # White pawn moves
             if self.board[r-1][c] == "--": # for a 1 square pawn advance
-                moves.append(Move((r, c), (r-1, c), self.board))
+                addPawnMove((r, c), (r-1, c), self.board)
                 if r == 6 and self.board[r-2][c] == "--": # 2 square move
-                    moves.append(Move((r, c), (r-2, c), self.board))
+                    addPawnMove((r, c), (r-2, c), self.board)
             if c-1 >= 0:  #Capture to the left
                 if self.board[r-1][c-1][0] == 'b':  #Enemy piece to capture
-                    moves.append(Move((r, c), (r-1, c-1), self.board))
+                    addPawnMove((r, c), (r-1, c-1), self.board)
                 elif (r-1, c-1) == self.enpassantPossible:
-                    moves.append(Move((r, c), (r-1, c-1), self.board, isEnpassantMove=True))
+                    addPawnMove((r, c), (r-1, c-1), self.board, isEnpassant=True)
+
 
             if c+1 <= 7:  # Captures to the right
                 if self.board[r-1][c+1][0] == 'b': # Enemy piece to capture
-                    moves.append(Move((r, c), (r-1, c+1), self.board))
+                    addPawnMove((r, c), (r-1, c+1), self.board)
                 elif (r-1, c+1) == self.enpassantPossible:
-                    moves.append(Move((r, c), (r-1, c+1), self.board, isEnpassantMove=True))
+                    addPawnMove((r, c), (r-1, c+1), self.board, isEnpassant=True)
         else: # Black pawn moves
             if self.board[r+1][c] == "--": # for a 1 square pawn advance
-                moves.append(Move((r, c), (r+1, c), self.board))
+                addPawnMove((r, c), (r+1, c), self.board)
                 if r == 1 and self.board[r+2][c] == "--": # a 2 square move
-                    moves.append(Move((r, c), (r+2, c), self.board))
+                    addPawnMove((r, c), (r+2, c), self.board)
             if c-1 >= 0: # Capture to the left
                 if self.board[r+1][c-1][0] == 'w': # Enemy piece to capture
-                    moves.append(Move((r, c), (r+1, c-1), self.board))
+                    addPawnMove((r, c), (r+1, c-1), self.board)
                 elif (r+1, c-1) == self.enpassantPossible:
-                    moves.append(Move((r, c), (r+1, c-1), self.board, isEnpassantMove=True))
+                    addPawnMove((r, c), (r+1, c-1), self.board, isEnpassant=True)
             if c+1 <= 7: #Captures to the right
                 if self.board[r+1][c+1][0] == 'w':
-                    moves.append(Move((r, c), (r+1, c+1), self.board))
+                    addPawnMove((r, c), (r+1, c+1), self.board)
                 elif (r+1, c+1) == self.enpassantPossible:
-                    moves.append(Move((r, c), (r+1, c+1), self.board, isEnpassantMove=True))
+                    addPawnMove((r, c), (r+1, c+1), self.board, isEnpassant=True)
 
 
 
@@ -367,13 +381,13 @@ class Move():
     # key: value
     ranksToRows = {"1": 7, "2": 6, "3": 5, "4": 4,
                    "5": 3, "6": 2, "7": 1, "8": 0}
-    rowsToRanks = {v: k for k, v in ranksToRows.items()}  ## HAD TO USE CLAUDE FOR THIS 😂
+    rowsToRanks = {v: k for k, v in ranksToRows.items()}  
     filesToCols = {"a": 0, "b": 1, "c": 2, "d": 3,
                    "e": 4, "f": 5, "g": 6, "h": 7}
     colsToFiles = {v: k for k, v in filesToCols.items()}
 
 
-    def __init__(self, startSq, endSq, board, isEnpassantMove=False, isCastleMove=False):
+    def __init__(self, startSq, endSq, board, isEnpassantMove=False, isCastleMove=False, promotionChoice='Q'):
         self.startRow = startSq[0]
         self.startCol = startSq[1]
         self.endRow = endSq[0]
@@ -384,7 +398,7 @@ class Move():
         
         # PAWN PROMOTION
         self.isPawnPromotion = (self.pieceMoved == "wp" and self.endRow == 0) or (self.pieceMoved == "bp" and self.endRow == 7)  # THis enables for pawn promotion
-        
+        self.promotionChoice = promotionChoice if self.isPawnPromotion else 'Q'
         # EN PASSANT
         self.isEnpassantMove = isEnpassantMove
         if self.isEnpassantMove:
@@ -402,7 +416,11 @@ class Move():
     # Overriding the equals method
     def __eq__(self, other):
         if isinstance(other, Move):
-            return self.moveID == other.moveID
+            if self.moveID != other.moveID:
+                return False
+            if self.isPawnPromotion:
+                return self.promotionChoice == other.promotionChoice
+            return True
         return False
 
 
@@ -454,7 +472,11 @@ class Move():
             if self.isCapture:
                 return self.colsToFiles[self.startCol] + "x" + endSquare
             else:
-                return endSquare
+                result = endSquare
+            
+            if self.isPawnPromotion:
+                result += "=" + self.promotionChoice
+            return result
 
         moveString = self.pieceMoved[1] + self.disambiguator
         if self.isCapture:

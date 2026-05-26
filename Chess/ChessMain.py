@@ -27,6 +27,42 @@ def loadImages():
     #We can now access an image by saying 'IMAGES['wp']'
 
 
+def drawPromotionUI(screen, gs):
+    pieces = ['Q', 'R', 'B', 'N']
+    color = 'w' if gs.whiteToMove else 'b'
+
+    panelW = SQ_SIZE * 4
+    panelH = SQ_SIZE
+    panelX = (BOARD_WIDTH - panelW) // 2
+    panelY = (BOARD_HEIGHT - panelH) // 2
+
+    overlay = p.Surface((BOARD_WIDTH, BOARD_HEIGHT), p.SRCALPHA)
+    overlay.fill((0, 0, 0, 160))
+    screen.blit(overlay, (0, 0))
+
+    box = p.Rect(panelX - 10, panelY - 10, panelW + 20, panelH + 20)
+    p.draw.rect(screen, p.Color(30, 30, 30), box, border_radius=8)
+    p.draw.rect(screen, p.Color(200, 160, 80), box, width=2, border_radius=8)
+
+    for i, piece in enumerate(pieces):
+        screen.blit(IMAGES[color + piece],
+                    p.Rect(panelX + i * SQ_SIZE, panelY, SQ_SIZE, SQ_SIZE))
+        
+    p.display.flip()
+
+    clock = p.time.Clock()
+    while True:
+        for event in p.event.get():
+            if event.type == p.QUIT:
+                return 'Q'
+            if event.type == p.MOUSEBUTTONDOWN:
+                mx, my = p.mouse.get_pos()
+                if panelY <= my <= panelY + panelH:
+                    for i, piece in enumerate(pieces):
+                        if panelX + i * SQ_SIZE <= mx <= panelX + (i + 1) * SQ_SIZE:
+                            return piece
+        clock.tick(30)
+
 # The main driver for our code. This will handle user input and updating the graphics
 
 def main():
@@ -48,7 +84,7 @@ def main():
 
     gameOver = False
     playerOne = True # If a human is playing white, then this will be true. if an AI is playing, then false
-    playerTwo = False # Same as above but for black
+    playerTwo = True # Same as above but for black
     AIThinking = False
     moveFinderProcess = None
     moveUndone = False
@@ -70,20 +106,33 @@ def main():
                     else:
                         sqSelected = (row, col)
                         playerClicks.append(sqSelected) #Appened for both 1st and 2nd clicks
-                    if len(playerClicks) == 2: #after second click
+                    if len(playerClicks) == 2:
                         move = ChessEngine2.Move(playerClicks[0], playerClicks[1], gs.board)
                         print(move.getChessNotation())
+
+                        # If the clicked move is a pawn promotion, ask the human which piece
+                        if move.isPawnPromotion:
+                            # Only show UI if at least one valid promotion exists for this start→end
+                            isValidPromotion = any(
+                                vm.isPawnPromotion
+                                and vm.startRow == move.startRow and vm.startCol == move.startCol
+                                and vm.endRow  == move.endRow  and vm.endCol  == move.endCol
+                                for vm in validMoves
+                            )
+                            if isValidPromotion:
+                                choice = drawPromotionUI(screen, gs)
+                                move.promotionChoice = choice
+
                         for i in range(len(validMoves)):
                             if move == validMoves[i]:
                                 validMoves[i].setDisambiguation(validMoves)
                                 gs.makeMove(validMoves[i])
                                 moveMade = True
                                 animate = True
-                                sqSelected = () # To help the user reset the clicks
+                                sqSelected = ()
                                 playerClicks = []
                         if not moveMade:
-                            playerClicks = [sqSelected]  #if lets say you mistakenly clicked a piece you do not want to move
-
+                            playerClicks = [sqSelected]
             # Key handler
             elif e.type == p.KEYDOWN:
                 if e.key == p.K_z: #Undo when 'z' is pressed
@@ -107,6 +156,7 @@ def main():
                     gameOver = False
                     if AIThinking:
                         moveFinderProcess.terminate()
+                        moveFinderProcess.join()
                         AIThinking = False
                     moveUndone = True
 
