@@ -2,7 +2,7 @@
 # and displaying the current GameState object
 
 import pygame as p
-import ChessEngine2
+import ChessEngine2, chessAI
 
 WIDTH = HEIGHT = 512 #400 could work
 DIMENSION = 8 #dimensions of the chess board are 8x8
@@ -40,14 +40,17 @@ def main():
 
 
     gameOver = False
+    playerOne = True # If a human is playing white, then this will be true. if an AI is playing, then false
+    playerTwo = False # Same as above but for black
     while running:
+        humanTurn = (gs.whiteToMove and playerOne) or (not gs.whiteToMove and playerTwo)
         for e in p.event.get():
             if e.type == p.QUIT:
                 running = False
 
             # Mouse handler
             elif e.type == p.MOUSEBUTTONDOWN:
-                if not gameOver:
+                if not gameOver and humanTurn:
                     location = p.mouse.get_pos() # (x,y) location of the mouse
                     col = location[0]//SQ_SIZE
                     row = location[1]//SQ_SIZE
@@ -83,6 +86,16 @@ def main():
                     playerClicks = []
                     moveMade = False
                     animate = False
+
+
+        # AI move finder
+        if not gameOver and not humanTurn:
+            AIMove = chessAI.findRandomMove(validMoves)
+            gs.makeMove(AIMove)
+            moveMade = True
+            animate = True
+
+
         if moveMade:
             if animate:
                 animateMove(gs.movelog[-1], screen, gs.board, clock)
