@@ -9,7 +9,8 @@ DEPTH = 3  # this would help control how much the computer would think
 def findRandomMove(validMoves):
     return validMoves[random.randint(0, len(validMoves)-1)]
 
-def findBestMove(gs, validMoves):
+
+def findBestMoveMinMaxNoRecursion(gs, validMoves):
 
     turnMultiplier = 1 if gs.whiteToMove else -1
 
@@ -45,10 +46,15 @@ def findBestMove(gs, validMoves):
         gs.undoMove()
     return bestPlayerMove
 
-def findBestMoveMinMax(gs, validMoves):  # helper method to help us make the first repating call
-    global nextMove
+def findBestMove(gs, validMoves):  # helper method to help us make the first repating call
+    global nextMove, counter
     nextMove = None
-    findMoveMinMax(gs, validMoves, DEPTH, gs.whiteToMove)
+    random.shuffle(validMoves)
+    counter = 0
+    #findMoveMinMax(gs, validMoves, DEPTH, gs.whiteToMove)
+    #findMoveNegaMax(gs, validMoves, DEPTH, 1 if gs.whiteToMove else -1)
+    findMoveNegaMaxAlphaBeta(gs, validMoves, DEPTH, -CHECKMATE, CHECKMATE, 1 if gs.whiteToMove else -1)
+    print(counter)
     return nextMove
 
 
@@ -88,8 +94,47 @@ def findMoveMinMax(gs, validMoves, depth, whiteToMove):
 
 
     
+def findMoveNegaMax(gs, validMoves, depth, turnMultiplier): # we would always be looking for a maximum and then we would multiply it
+    global nextMove, counter
+    counter += 1
+    if depth == 0:
+        return turnMultiplier * scoreBoard(gs)
+    
+    maxScore = -CHECKMATE
+    for move in validMoves:
+        gs.makeMove(move)
+        nextMoves = gs.getValidMoves()
+        score = -findMoveNegaMax(gs, nextMoves, depth-1, -turnMultiplier)   # this line here is the brain of the negamax algorithm. the negative sign before findMoveNegaMax is key
+        if score > maxScore:
+            maxScore = score
+            if depth == DEPTH:
+                nextMove = move
+        gs.undoMove()
+    return maxScore
 
 
+def findMoveNegaMaxAlphaBeta(gs, validMoves, depth, alpha, beta, turnMultiplier): 
+    global nextMove, counter
+    counter += 1
+    if depth == 0:
+        return turnMultiplier * scoreBoard(gs)
+    
+    # move ordering - implement later
+    maxScore = -CHECKMATE
+    for move in validMoves:
+        gs.makeMove(move)
+        nextMoves = gs.getValidMoves()
+        score = -findMoveNegaMaxAlphaBeta(gs, nextMoves, depth-1, -beta, -alpha, -turnMultiplier)
+        if score > maxScore:
+            maxScore = score
+            if depth == DEPTH:
+                nextMove = move
+        gs.undoMove()
+        if maxScore > alpha: # Where the pruning happens
+            alpha = maxScore
+        if alpha >= beta:
+            break
+    return maxScore
 
 def scoreBoard(gs): # A positive sxore is good for white, a negative score is good for black (chess.com bar)
     if gs.checkmate:

@@ -40,8 +40,8 @@ def main():
 
 
     gameOver = False
-    playerOne = True # If a human is playing white, then this will be true. if an AI is playing, then false
-    playerTwo = False # Same as above but for black
+    playerOne = False # If a human is playing white, then this will be true. if an AI is playing, then false
+    playerTwo = True # Same as above but for black
     while running:
         humanTurn = (gs.whiteToMove and playerOne) or (not gs.whiteToMove and playerTwo)
         for e in p.event.get():
@@ -62,7 +62,7 @@ def main():
                         playerClicks.append(sqSelected) #Appened for both 1st and 2nd clicks
                     if len(playerClicks) == 2: #after second click
                         move = ChessEngine2.Move(playerClicks[0], playerClicks[1], gs.board)
-                        print(move.getChessNotation())
+                        #print(move.getChessNotation())
                         for i in range(len(validMoves)):
                             if move == validMoves[i]:
                                 gs.makeMove(validMoves[i])
@@ -92,7 +92,7 @@ def main():
 
         # AI move finder
         if not gameOver and not humanTurn:
-            AIMove = chessAI.findBestMoveMinMax(gs, validMoves)
+            AIMove = chessAI.findBestMove(gs, validMoves)
             if AIMove is None:
                 AIMove = chessAI.findRandomMove(validMoves)
             gs.makeMove(AIMove)
