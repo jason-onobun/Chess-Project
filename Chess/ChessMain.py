@@ -83,8 +83,7 @@ def main(playerOne=True, playerTwo=False):
 
 
     gameOver = False
-    playerOne = True # If a human is playing white, then this will be true. if an AI is playing, then false
-    playerTwo = False # Same as above but for black
+
     AIThinking = False
     moveFinderProcess = None
     moveUndone = False
@@ -190,7 +189,16 @@ def main(playerOne=True, playerTwo=False):
         drawGameState(screen, gs, validMoves, sqSelected, moveLogFont)
         if gs.checkmate or gs.stalemate:
             gameOver = True
-            drawEndGameText(screen, "Stalemate" if gs.stalemate else "Black wins by Checkmate" if gs.whiteToMove else "White wins by Checkmate")
+            if gs.stalemate:
+                drawEndGameText(screen, "Stalemate", None)
+            elif gs.whiteToMove:
+                joke = "I guess I might replace you🫵😂🙏" if not playerTwo else None
+                drawEndGameText(screen, "Black wins by Checkmate", joke)
+                
+            else:
+                joke = "I guess I might replace you🫵😂🙏" if not playerOne else None
+                drawEndGameText(screen, "White wins by Checkmate", joke)
+   
 
         clock.tick(MAX_FPS)
         p.display.flip()
@@ -316,28 +324,34 @@ def animateMove(move, screen, board, clock):
         p.display.flip()
         clock.tick(60)
 
-def drawEndGameText(screen, text):
+def drawEndGameText(screen, text, jokeText=None):
     # Semi-transparent dark overlay over the whole board
     overlay = p.Surface((BOARD_WIDTH, BOARD_HEIGHT), p.SRCALPHA)
     overlay.fill((0, 0, 0, 150))  # black with ~60% opacity
     screen.blit(overlay, (0, 0))
 
-    font = p.font.SysFont("Helvetica", 36, True, False)  # fixed typo too
-    textObject = font.render(text, True, p.Color(255, 255, 255))  # white text
+    mainFont = p.font.SysFont("Helvetica", 36, True, False)  # fixed typo too
+    emojiFont = p.font.SysFont("Segoe UI Emoji", 26, False, False)
+    mainObj = mainFont.render(text, True, p.Color(255, 255, 255))  # white text
+    jokeObj = emojiFont.render(jokeText, True, p.Color(255, 215, 0)) if jokeText else None
 
-    # Center the text
-    textX = BOARD_WIDTH // 2 - textObject.get_width() // 2
-    textY = BOARD_HEIGHT // 2 - textObject.get_height() // 2
 
-    # Draw a dark rounded-ish box behind the text for readability
     padding = 16
-    box_rect = p.Rect(textX - padding, textY - padding,
-                      textObject.get_width() + padding * 2,
-                      textObject.get_height() + padding * 2)
-    p.draw.rect(screen, p.Color(30, 30, 30), box_rect, border_radius=8)
-    p.draw.rect(screen, p.Color(200, 160, 80), box_rect, width=2, border_radius=8)  # gold border
+    lineGap = 10
+    boxW = max(mainObj.get_width(), jokeObj.get_width() if jokeObj else 0) + padding * 2
+    boxH = mainObj.get_height() + (lineGap + jokeObj.get_height() if jokeObj else 0) + padding * 2
 
-    screen.blit(textObject, (textX, textY))
+    boxX = BOARD_WIDTH // 2 - boxW // 2
+    boxY = BOARD_HEIGHT // 2 - boxH // 2
+
+    box_rect = p.Rect(boxX, boxY, boxW, boxH)
+    p.draw.rect(screen, p.Color(30, 30, 30), box_rect, border_radius=8)
+    p.draw.rect(screen, p.Color(200, 160, 80), box_rect, width=2, border_radius=8)
+
+    screen.blit(mainObj, (BOARD_WIDTH // 2 - mainObj.get_width() // 2, boxY + padding))
+
+    if jokeObj:
+        screen.blit(jokeObj, (BOARD_WIDTH // 2 - jokeObj.get_width() // 2, boxY + padding + mainObj.get_height() + lineGap))
 
 if __name__ == "__main__":
     main()

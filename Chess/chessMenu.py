@@ -52,7 +52,7 @@ def screenHome(surface, fonts, mouse, events):
 
     drawCheckerboardBg(surface)
 
-    title = fonts["title"].render("♟ CHESS", True, GOLD)
+    title = fonts["title"].render("CHESS", True, GOLD)
     surface.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 165))
 
     btnHuman = p.Rect(SCREEN_W // 2 - 160, 270, 320, 60) # button for human
@@ -64,8 +64,8 @@ def screenHome(surface, fonts, mouse, events):
     hA = btnAI.collidepoint(mx, my)
     hQ = btnQuit.collidepoint(mx, my)
 
-    drawButton(surface, btnHuman, "👥  Play vs Human", fonts["btn"], BG_PANEL, GOLD, hovered=hH)
-    drawButton(surface, btnAI,  "🤖  Play vs AI",   fonts["btn"], BG_PANEL, GOLD, hovered=hA)
+    drawButton(surface, btnHuman, "Play vs Human", fonts["btn"], BG_PANEL, GOLD, hovered=hH)
+    drawButton(surface, btnAI,  "Play vs AI",   fonts["btn"], BG_PANEL, GOLD, hovered=hA)
     drawButton(surface, btnQuit,  "Quit",       fonts["btn"], BG_PANEL, RED_SEL, hovered=hQ, radius=8)
 
     for e in events:
