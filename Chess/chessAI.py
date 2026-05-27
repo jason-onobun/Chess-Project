@@ -111,8 +111,9 @@ def findBestMoveMinMaxNoRecursion(gs, validMoves):
         gs.undoMove()
     return bestPlayerMove
 
-def findBestMove(gs, validMoves, returnQueue):  # helper method to help us make the first repating call
-    global nextMove, counter
+def findBestMove(gs, validMoves, returnQueue, depth=DEPTH):  # helper method to help us make the first repating call
+    global nextMove, counter, DEPTH
+    DEPTH = depth
     nextMove = None
     random.shuffle(validMoves)
     counter = 0

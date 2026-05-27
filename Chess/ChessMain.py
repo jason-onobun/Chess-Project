@@ -65,7 +65,7 @@ def drawPromotionUI(screen, gs):
 
 # The main driver for our code. This will handle user input and updating the graphics
 
-def main():
+def main(playerOne=True, playerTwo=False):
     p.init()
     screen = p.display.set_mode((BOARD_WIDTH + MOVE_LOG_PANEL_WIDTH, BOARD_HEIGHT))
     clock = p.time.Clock()
@@ -84,7 +84,7 @@ def main():
 
     gameOver = False
     playerOne = True # If a human is playing white, then this will be true. if an AI is playing, then false
-    playerTwo = True # Same as above but for black
+    playerTwo = False # Same as above but for black
     AIThinking = False
     moveFinderProcess = None
     moveUndone = False
@@ -165,7 +165,7 @@ def main():
             if not AIThinking:
                 AIThinking = True
                 returnQueue = Queue() # used to pass data between threads
-                moveFinderProcess = Process(target=chessAI.findBestMove, args=(gs, validMoves, returnQueue))
+                moveFinderProcess = Process(target=chessAI.findBestMove, args=(gs, validMoves, returnQueue, chessAI.DEPTH))
                 moveFinderProcess.start() # Call chessAI findBestMove(gs, validMoves, returnQueue)
  
             if not moveFinderProcess.is_alive():
