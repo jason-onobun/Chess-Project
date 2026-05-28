@@ -19,6 +19,9 @@ IMAGES = {}
 SOUNDS = {}
 
 
+BOARD_LIGHT_SQ = p.Color(65, 45, 95)
+BOARD_DARK_SQ = p.Color(28, 18, 45)
+
 # Capture effect colour for each piece
 CAPTURE_COLOURS = {
     'p': (255, 230, 80), # warm gold
@@ -595,20 +598,49 @@ def main(playerOne=True, playerTwo=False):
 #Responsible for all the graphic with a current game state
 def drawGameState(screen, gs, validMoves, sqSelected, moveLogFont):
     drawBoard(screen) # Draw the swaureson the board
+    drawArcaneOverlay(screen)
     drawPieces(screen, gs.board) # draw pieces on top of the squares
     highlightSquares(screen, gs, validMoves, sqSelected)
     drawMoveLog(screen, gs, moveLogFont)
 
 
 
-def drawBoard(screen): # Draw the squares on the board
-    global colors
-    colors = [p.Color(240, 217, 181), p.Color(181, 136, 99)] # WE ARE GONNA CHANGE THIS LATER
+
+def drawBoard(screen):
+    GLOW_COLOR = p.Color(180, 120, 255, 40)  # Subtle magical glow
+
     for r in range(DIMENSION):
         for c in range(DIMENSION):
-            color = colors[((r+c) % 2)] #We want to determine if the board would be black
-            # or white. where if it is '0' it will be white and if it is '1' it would be black
-            p.draw.rect(screen, color, p.Rect(c*SQ_SIZE, r*SQ_SIZE, SQ_SIZE, SQ_SIZE))
+            is_light = (r + c) % 2 == 0
+            base_color = BOARD_LIGHT_SQ if is_light else BOARD_DARK_SQ
+            
+            rect = p.Rect(c * SQ_SIZE, r * SQ_SIZE, SQ_SIZE, SQ_SIZE)
+            p.draw.rect(screen, base_color, rect)
+            
+            # Add subtle inner glow/border for magical feel
+            if is_light:
+                glow_rect = rect.inflate(-6, -6)
+                s = p.Surface((SQ_SIZE, SQ_SIZE), p.SRCALPHA)
+                p.draw.rect(s, GLOW_COLOR, glow_rect, border_radius=4)
+                screen.blit(s, (c * SQ_SIZE, r * SQ_SIZE))
+
+
+_STAR_POSITIONS = [(random.randint(0, BOARD_WIDTH), random.randint(0, BOARD_HEIGHT),
+                    random.randint(20, 70)) for _ in range(80)]
+
+def drawArcaneOverlay(screen):
+    overlay = p.Surface((BOARD_WIDTH, BOARD_HEIGHT), p.SRCALPHA)
+
+    # Static stars / magical dust — positions are fixed, no more flickering
+    for x, y, alpha in _STAR_POSITIONS:
+        p.draw.circle(overlay, (220, 220, 255, alpha), (x, y), 1)
+    
+    # Very faint vertical mystical beams
+    for x in range(0, BOARD_WIDTH, 90):
+        p.draw.line(overlay, (140, 100, 255, 8), (x, 0), (x, BOARD_HEIGHT), 2)
+    
+    screen.blit(overlay, (0, 0))
+
 
 
 
@@ -676,7 +708,6 @@ def drawMoveLog(screen, gs, font): # Draws the move log
 
 # Animating a move
 def animateMove(move, screen, board, clock, fast=False):
-    global colors
     dR = move.endRow - move.startRow
     dC = move.endCol - move.startCol
     framesPerSquare = 4 if fast else 10
@@ -694,7 +725,8 @@ def animateMove(move, screen, board, clock, fast=False):
         drawPieces(screen, board)
 
         # Erase piece from ending square
-        color = colors[(move.endRow + move.endCol) % 2]
+        is_light = (move.endRow + move.endCol) % 2 == 0
+        color = BOARD_LIGHT_SQ if is_light else BOARD_DARK_SQ
         endSquare = p.Rect(move.endCol * SQ_SIZE, move.endRow * SQ_SIZE, SQ_SIZE, SQ_SIZE)
         p.draw.rect(screen, color, endSquare)
 
