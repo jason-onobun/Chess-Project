@@ -388,22 +388,41 @@ def drawPromotionUI(screen, gs):
     pieces = ['Q', 'R', 'B', 'N']
     color = 'w' if gs.whiteToMove else 'b'
 
-    panelW = SQ_SIZE * 4
-    panelH = SQ_SIZE
+    
+    overlay = p.Surface((BOARD_WIDTH, BOARD_HEIGHT), p.SRCALPHA)
+    overlay.fill((10, 8, 28, 190))
+    screen.blit(overlay, (0, 0))
+    
+    panelW = SQ_SIZE * 4 + 40
+    panelH = SQ_SIZE + 90
     panelX = (BOARD_WIDTH - panelW) // 2
     panelY = (BOARD_HEIGHT - panelH) // 2
 
-    overlay = p.Surface((BOARD_WIDTH, BOARD_HEIGHT), p.SRCALPHA)
-    overlay.fill((0, 0, 0, 160))
-    screen.blit(overlay, (0, 0))
 
-    box = p.Rect(panelX - 10, panelY - 10, panelW + 20, panelH + 20)
-    p.draw.rect(screen, p.Color(30, 30, 30), box, border_radius=8)
-    p.draw.rect(screen, p.Color(200, 160, 80), box, width=2, border_radius=8)
+    box = p.Rect(panelX, panelY, panelW, panelH)
+    p.draw.rect(screen, p.Color(28, 20, 48), box, border_radius=16)
+    p.draw.rect(screen, p.Color(180, 130, 255), box, width=5, border_radius=16)
+    p.draw.rect(screen, p.Color(100, 60, 180, 80), box.inflate(-12, -12), width=3, border_radius=12)
+
+    title_font = p.font.SysFont("Georgia", 26, bold=True)
+    title = title_font.render("CHOOSE YOUR VESSEL", True, p.Color(245, 215, 170))
+    screen.blit(title, (BOARD_WIDTH // 2 - title.get_width() // 2, panelY + 12))
+
+    piece_size = SQ_SIZE
+    startX = panelX + 20
 
     for i, piece in enumerate(pieces):
-        screen.blit(IMAGES[color + piece],
-                    p.Rect(panelX + i * SQ_SIZE, panelY, SQ_SIZE, SQ_SIZE))
+        x = startX + i * (piece_size + 10)
+        y = panelY + 68
+
+        piece_rect = p.Rect(x -4, y -4, piece_size + 8, piece_size + 8)
+        p.draw.rect(screen, p.Color(140, 90, 220, 60), piece_rect, border_radius=8)
+
+        if color + piece in IMAGES:
+            screen.blit(IMAGES[color + piece], (x, y))
+
+        p.draw.rect(screen, p.Color(200, 160, 255, 80), piece_rect, width=2, border_radius=8)
+        
         
     p.display.flip()
 
@@ -427,7 +446,7 @@ def main(playerOne=True, playerTwo=False):
     screen = p.display.set_mode((BOARD_WIDTH + MOVE_LOG_PANEL_WIDTH, BOARD_HEIGHT))
     clock = p.time.Clock()
     screen.fill(p.Color(18, 12, 32))
-    moveLogFont = p.font.SysFont("Arial", 18, False, False)
+    moveLogFont = p.font.SysFont("Georgia", 17)
     gs = ChessEngine2.GameState()
     validMoves = gs.getValidMoves()
     moveMade = False #flgag variable for when a move is made
@@ -684,21 +703,21 @@ def drawMoveLog(screen, gs, font):
     
     # Ornate border with magical glow
     border_rect = moveLogRect.inflate(-8, -8)
-    p.draw.rect(screen, p.Color(140, 100, 220), border_rect, width=3, border_radius=12)
+    p.draw.rect(screen, p.Color(160, 110, 230), border_rect, width=4, border_radius=12)
     
     # Inner glowing frame
-    inner_rect = moveLogRect.inflate(-18, -18)
-    p.draw.rect(screen, p.Color(80, 50, 140, 60), inner_rect, width=2, border_radius=8)
+    inner_rect = moveLogRect.inflate(-20, -20)
+    p.draw.rect(screen, p.Color(90, 55, 160, 50), inner_rect, width=2, border_radius=8)
     
     # Title header ("Moves" or "Arcane Record")
-    title_font = p.font.SysFont("Georgia", 22, bold=True)
-    title = title_font.render("WIZARD'S LOG", True, p.Color(200, 170, 255))
-    screen.blit(title, (BOARD_WIDTH + (MOVE_LOG_PANEL_WIDTH - title.get_width()) // 2, 12))
+    title_font = p.font.SysFont("Georgia", 24, bold=True)
+    title = title_font.render("WIZARD'S LOG", True, p.Color(245, 215, 180))
+    screen.blit(title, (BOARD_WIDTH + (MOVE_LOG_PANEL_WIDTH - title.get_width()) // 2, 14))
     
     # Horizontal divider with runes
-    p.draw.line(screen, p.Color(140, 100, 220), 
-                (BOARD_WIDTH + 20, 48), 
-                (BOARD_WIDTH + MOVE_LOG_PANEL_WIDTH - 20, 48), 2)
+    p.draw.line(screen, p.Color(180, 130, 240), 
+                (BOARD_WIDTH + 25, 52), 
+                (BOARD_WIDTH + MOVE_LOG_PANEL_WIDTH - 25, 52), 3)
 
     moveLog = gs.movelog
     moveTexts = []
@@ -709,34 +728,36 @@ def drawMoveLog(screen, gs, font):
         moveTexts.append(moveString)
 
     # Draw moves with mystical styling
-    padding = 22
-    lineSpacing = 6
+    padding = 20
+    lineSpacing = 8
     textY = 68
     
+    move_font = p.font.SysFont("Georgia", 17, bold=False)
+
     for i, text in enumerate(moveTexts):
         # Alternate subtle row shading
         if i % 2 == 0:
-            row_bg = p.Surface((MOVE_LOG_PANEL_WIDTH - 12, 22), p.SRCALPHA)
-            row_bg.fill((60, 40, 100, 30))
-            screen.blit(row_bg, (BOARD_WIDTH + 6, textY - 2))
+            row_bg = p.Surface((MOVE_LOG_PANEL_WIDTH - 16, 26), p.SRCALPHA)
+            row_bg.fill((70, 45, 110, 35))
+            screen.blit(row_bg, (BOARD_WIDTH + 8, textY - 4))
         
         # Render text with slight glow effect
-        textSurface = font.render(text, True, p.Color(235, 220, 255))
+        textSurface = move_font.render(text, True, p.Color(235, 225, 255))
         textLocation = (BOARD_WIDTH + padding, textY)
         screen.blit(textSurface, textLocation)
         
         textY += textSurface.get_height() + lineSpacing
         
         # Stop if we're running out of space
-        if textY > MOVE_LOG_PANEL_HEIGHT - 40:
+        if textY > MOVE_LOG_PANEL_HEIGHT - 50:
             break
 
     # Bottom decorative flourish
     if len(moveTexts) > 0:
         flourish_y = min(textY + 12, MOVE_LOG_PANEL_HEIGHT - 18)
-        p.draw.line(screen, p.Color(120, 80, 200, 80), 
-                    (BOARD_WIDTH + 30, flourish_y), 
-                    (BOARD_WIDTH + MOVE_LOG_PANEL_WIDTH - 30, flourish_y), 1)
+        p.draw.line(screen, p.Color(160, 110, 230, 90), 
+                    (BOARD_WIDTH + 35, flourish_y), 
+                    (BOARD_WIDTH + MOVE_LOG_PANEL_WIDTH - 35, flourish_y), 2)
 
 
 
@@ -793,17 +814,17 @@ def animateMove(move, screen, board, clock, fast=False):
 def drawEndGameText(screen, text, jokeText=None):
     # Semi-transparent dark overlay over the whole board
     overlay = p.Surface((BOARD_WIDTH, BOARD_HEIGHT), p.SRCALPHA)
-    overlay.fill((0, 0, 0, 150))  # black with ~60% opacity
+    overlay.fill((0, 0, 0, 170))  # black with ~60% opacity
     screen.blit(overlay, (0, 0))
 
-    mainFont = p.font.SysFont("Helvetica", 36, True, False)  # fixed typo too
-    emojiFont = p.font.SysFont("Segoe UI Emoji", 26, False, False)
-    mainObj = mainFont.render(text, True, p.Color(255, 255, 255))  # white text
-    jokeObj = emojiFont.render(jokeText, True, p.Color(255, 215, 0)) if jokeText else None
+    mainFont = p.font.SysFont("Georgia", 42, bold=True)  # fixed typo too
+    emojiFont = p.font.SysFont("Segoe UI Emoji", 28)
+    mainObj = mainFont.render(text, True, p.Color(255, 235, 180)) #gold colour
+    jokeObj = emojiFont.render(jokeText, True, p.Color(255, 215, 100)) if jokeText else None
 
 
-    padding = 16
-    lineGap = 10
+    padding = 20
+    lineGap = 12
     boxW = max(mainObj.get_width(), jokeObj.get_width() if jokeObj else 0) + padding * 2
     boxH = mainObj.get_height() + (lineGap + jokeObj.get_height() if jokeObj else 0) + padding * 2
 
@@ -811,8 +832,8 @@ def drawEndGameText(screen, text, jokeText=None):
     boxY = BOARD_HEIGHT // 2 - boxH // 2
 
     box_rect = p.Rect(boxX, boxY, boxW, boxH)
-    p.draw.rect(screen, p.Color(30, 30, 30), box_rect, border_radius=8)
-    p.draw.rect(screen, p.Color(200, 160, 80), box_rect, width=2, border_radius=8)
+    p.draw.rect(screen, p.Color(25, 18, 45), box_rect, border_radius=12)
+    p.draw.rect(screen, p.Color(180, 130, 240), box_rect, width=4, border_radius=12)
 
     screen.blit(mainObj, (BOARD_WIDTH // 2 - mainObj.get_width() // 2, boxY + padding))
 
