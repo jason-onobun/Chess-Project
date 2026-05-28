@@ -16,6 +16,7 @@ DIMENSION = 8 #dimensions of the chess board are 8x8
 SQ_SIZE = BOARD_HEIGHT // DIMENSION
 MAX_FPS = 15 #for animations later on
 IMAGES = {}
+SOUNDS = {}
 
 
 # Capture effect colour for each piece
@@ -39,6 +40,25 @@ def loadImages():
         IMAGES[piece] = p.transform.scale(p.image.load("Chess/images/" + piece + ".png"), (SQ_SIZE, SQ_SIZE))
     #We can now access an image by saying 'IMAGES['wp']'
 
+def loadSounds():
+    p.mixer.init()
+    sound_files = {
+        "capture": "Chess/sounds/capturePiece.wav",
+        "check": "Chess/sounds/kingInCheck.wav",
+        "checkmate": "Chess/sounds/checkMateWin.ogg",
+    }
+    for name, path in sound_files.items():
+        try:
+            SOUNDS[name] = p.mixer.Sound(path)
+        except FileNotFoundError:
+            print(f"[Sound] Warning: '{path}' not found. '{name}' sound will be skipped.")
+            SOUNDS[name] = None
+
+
+def playSound(name):
+    sound = SOUNDS.get(name)
+    if sound:
+        sound.play()
 
 def spawnParticles(cx, cy, color, count=14, speed_lo=2.0, speed_hi=7.0):
     parts = []
@@ -411,6 +431,7 @@ def main(playerOne=True, playerTwo=False):
     animate = False # Flag variable for when we should animate a move
 
     loadImages() #only do this once, before the while loop
+    loadSounds()
     running = True
     sqSelected = () # Where no square is selected initially. Keep track of the last click of the user
     playerClicks = [] # Keep track of player clicks
@@ -532,6 +553,7 @@ def main(playerOne=True, playerTwo=False):
                 animateMove(move, screen, gs.board, clock, fast=moveGivesCheck)
 
                 if move.isCapture:
+                    playSound("capture")
                     animateCaptureEffect(screen, move, gs.board, clock) # Fast animation if this move gives check (dramatic speed burst)
 
                 elif prevPlayerWasInCheck:
@@ -542,6 +564,7 @@ def main(playerOne=True, playerTwo=False):
             currentPlayerInCheck = gs.inCheck()
             
             if moveGivesCheck and not gs.checkmate and not gs.stalemate:
+                playSound("check")
                 animateCheckEffect(screen, gs, gs.board, clock)
             
             moveMade = False
@@ -551,6 +574,9 @@ def main(playerOne=True, playerTwo=False):
 
         drawGameState(screen, gs, validMoves, sqSelected, moveLogFont)
         if gs.checkmate or gs.stalemate:
+            if not gameOver:
+                if gs.checkmate:
+                    playSound("checkmate")
             gameOver = True
             if gs.stalemate:
                 drawEndGameText(screen, "Stalemate", None)
