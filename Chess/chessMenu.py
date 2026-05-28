@@ -2,19 +2,24 @@ import pygame as p
 import sys
 import chessAI
 import ChessMain
+import random
+import math
 
 SCREEN_W, SCREEN_H = 762, 600
-BG_DARK = (18, 18, 18)
-BG_PANEL = (30, 30, 30)
-GOLD = (200, 160, 80)
-GOLD_DIM = (140, 110, 50)
-WHITE = (240, 240, 240)
-GREY = (160, 160, 160)
-LIGHT_SQ = (240, 217, 181)
-DARK_SQ = (181, 136, 99)
-GREEN_SEL = (80, 170, 100)
-GREEN_DIM = (50, 110, 65)
-RED_SEL = (190, 70, 70)
+BG_DARK = (18, 12, 32)
+BG_PANEL = (28, 30, 48)
+ACCENT_GOLD = (245, 215, 170)
+ACCENT_GOLD_DIM = (180, 130, 80)
+ACCENT_PURPLE = (160, 110, 230)
+ACCENT_PURPLE_DIM = (100, 60, 180)
+WHITE = (235, 225, 255)
+GREY = (180, 170, 200)
+
+
+# bUTTON Colour
+BTN_BG = (35, 25, 55)
+BTN_HOVER = (55, 40, 85)
+BTN_BORDER = ACCENT_PURPLE
 
 DIFFICULTIES = {
     "Easy": 1,
@@ -25,48 +30,71 @@ DIFFICULTIES = {
 
 DIFF_LABELS = list(DIFFICULTIES.keys())
 
+def drawArcaneOverlay(screen):
+    overlay = p.Surface((SCREEN_W, SCREEN_H), p.SRCALPHA)
+
+    # Static stars / magical dust — positions are fixed, no more flickering
+    for x, y, alpha in _STAR_POSITIONS:
+        p.draw.circle(overlay, (220, 220, 255, alpha), (x, y), 1)
+    
+    # Very faint vertical mystical beams
+    for x in range(0, SCREEN_W, 85):
+        p.draw.line(overlay, (140, 100, 255, 8), (x, 0), (x, SCREEN_H), 2)
+    
+    screen.blit(overlay, (0, 0))
+
+
+_STAR_POSITIONS = [(random.randint(0, SCREEN_W), random.randint(0, SCREEN_H), 
+                   random.randint(25, 75)) for _ in range(70)]
+
+
+
+
+
 
 def drawButton(surface, rect, text, font,
-               bg, border, textColor=WHITE,
-               hovered=False, radius=10):
-    col = tuple(min(c + 25, 255) for c in bg) if hovered else bg
-    p.draw.rect(surface, col, rect, border_radius=radius)
-    p.draw.rect(surface, border, rect, width=2, border_radius=radius)
+               bg=BTN_BG, border=BTN_BORDER, textColor=WHITE,
+               hovered=False, glow=False):
+    color = tuple(min(c + 35, 255) for c in bg) if hovered else bg
+    p.draw.rect(surface, color, rect, border_radius=12)
+
+    if hovered or glow:
+        glow_rect = rect.inflate(8, 8)
+        s = p.Surface(glow_rect.size, p.SRCALPHA)
+        p.draw.rect(s, (*ACCENT_PURPLE, 60), glow_rect, border_radius=16)
+        surface.blit(s, glow_rect.topleft)
+
+    p.draw.rect(surface, border, rect, width=3, border_radius=12)
+
     label = font.render(text, True, textColor)
     lx = rect.centerx - label.get_width() // 2
     ly = rect.centery - label.get_height() // 2
     surface.blit(label, (lx, ly))
 
 
-def drawCheckerboardBg(surface): # would help with a sbutle chessboard-tile background
-    sq = 40
-    cols = SCREEN_W // sq + 1
-    rows = SCREEN_H // sq + 1
-    for r in range(rows):
-        for c in range(cols):
-            colour = (28, 28, 28) if (r+c) % 2 == 0 else (22, 22, 22)
-            p.draw.rect(surface, colour, p.Rect(c * sq, r* sq, sq, sq))
-
 
 def screenHome(surface, fonts, mouse, events):
+    surface.fill(BG_DARK)
+    drawArcaneOverlay(surface)
 
-    drawCheckerboardBg(surface)
-
-    title = fonts["title"].render("CHESS", True, GOLD)
+    title = fonts["title"].render("WIZARD'S CHESS", True, ACCENT_GOLD)
+    title_shadow = fonts["title"].render("WIZARD'S CHESS", True, (80, 40, 120))
+    surface.blit(title_shadow, (SCREEN_W // 2 - title_shadow.get_width() // 2 + 3, 168))
     surface.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 165))
 
-    btnHuman = p.Rect(SCREEN_W // 2 - 160, 270, 320, 60) # button for human
-    btnAI = p.Rect(SCREEN_W // 2 - 160, 360, 320, 60) # button for AI
-    btnQuit = p.Rect(SCREEN_W // 2 - 80, 460, 160, 48)
+    btnHuman = p.Rect(SCREEN_W // 2 - 170, 270, 340, 65) # button for human
+    btnAI = p.Rect(SCREEN_W // 2 - 170, 355, 340, 65) # button for AI
+    btnQuit = p.Rect(SCREEN_W // 2 - 70, 460, 140, 50)
 
     mx, my = mouse
     hH = btnHuman.collidepoint(mx, my)
     hA = btnAI.collidepoint(mx, my)
     hQ = btnQuit.collidepoint(mx, my)
 
-    drawButton(surface, btnHuman, "Play vs Human", fonts["btn"], BG_PANEL, GOLD, hovered=hH)
-    drawButton(surface, btnAI,  "Play vs AI",   fonts["btn"], BG_PANEL, GOLD, hovered=hA)
-    drawButton(surface, btnQuit,  "Quit",       fonts["btn"], BG_PANEL, RED_SEL, hovered=hQ, radius=8)
+    drawButton(surface, btnHuman, "Play vs Human", fonts["btn"], hovered=hH)
+    drawButton(surface, btnAI, "Play vs AI",   fonts["btn"], hovered=hA)
+    drawButton(surface, btnQuit, "Quit", fonts["btn"], 
+               bg=(60, 20, 30), border=(190, 70, 70), hovered=hQ)
 
     for e in events:
         if e.type == p.MOUSEBUTTONDOWN and e.button == 1:
@@ -76,75 +104,76 @@ def screenHome(surface, fonts, mouse, events):
     return None
 
 def screenAIOptions(surface, fonts, mouse, events, state):
-    drawCheckerboardBg(surface)
+    surface.fill(BG_DARK)
+    drawArcaneOverlay(surface)
 
     # For the title
 
-    title = fonts["heading"].render("Game Settings", True, GOLD)
+    title = fonts["heading"].render("GAME SETTINGS", True, ACCENT_GOLD)
     surface.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 40))
 
     mx, my = mouse
 
     # To help the player choose their colour when playing against the AI
-    secLabel = fonts["label"].render("Play as", True, WHITE)
-    surface.blit(secLabel, (SCREEN_W // 2 - 200, 115))
+    secLabel = fonts["label"].render("CHOOSE YOUR COLOR", True, WHITE)
+    surface.blit(secLabel, (SCREEN_W // 2 - secLabel.get_width() // 2, 115))
 
     colourOptions = [("White", "white"), ("Black", "black"), ("Random", "random")]
-    colBtnW, colBtnH = 130, 48
+    colBtnW, colBtnH = 135, 52
 
-    colStartX = SCREEN_W // 2 - (colBtnW * 3 + 16) // 2
-    colBtnY = 150
+    colStartX = SCREEN_W // 2 - (colBtnW * 3 + 24) // 2
+    colBtnY = 155
     colRects = []
     for i, (label, val) in enumerate(colourOptions):
-        r = p.Rect(colStartX + i * (colBtnW + 8), colBtnY, colBtnW, colBtnH)
+        r = p.Rect(colStartX + i * (colBtnW + 12), colBtnY, colBtnW, colBtnH)
         colRects.append((r, val))
         selected = (state["colour"] == val)
-        bg = GREEN_SEL if selected else BG_PANEL
-        border = GREEN_DIM if selected else GOLD_DIM
-        hov = r.collidepoint(mx, my) and not selected
-        drawButton(surface, r, label, fonts["btn"], bg, border, hovered=hov, radius=8)
+        bg = (70, 140, 100) if selected else BTN_BG
+        border = (100, 220, 140) if selected else BTN_BG
+        drawButton(surface, r, label, fonts["btn"], bg=bg, border=border, hovered=r.collidepoint(mx, my) and not selected)
 
     # Handling difficulty
-    diffLabel = fonts["label"].render("Difficulty", True, WHITE)
-    surface.blit(diffLabel, (SCREEN_W // 2 - 200, 240))
+    diffLabel = fonts["label"].render("DIFFICULTY", True, WHITE)
+    surface.blit(diffLabel, (SCREEN_W // 2 - diffLabel.get_width() // 2, 235))
 
-    diffBtnW, diffBtnH = 130, 48
-    diffstartX = SCREEN_W // 2 - (diffBtnW * 4 + 24) // 2
-    diffBtnY = 275
+    diffBtnW, diffBtnH = 125, 52
+    diffstartX = SCREEN_W // 2 - (diffBtnW * 4 + 30) // 2
+    diffBtnY = 270
     diffRects = []
     for i, name in enumerate(DIFF_LABELS):
         r = p.Rect(diffstartX + i * (diffBtnW + 8), diffBtnY, diffBtnW, diffBtnH)
         diffRects.append(r)
         selected = (state["difficulty"] == i)
-        bg      = GREEN_SEL if selected else BG_PANEL
-        border = GREEN_DIM if selected else GOLD_DIM
-        hov = r.collidepoint(mx, my) and not selected
-        drawButton(surface, r, name, fonts["btn"], bg, border, hovered=hov, radius=8)
+        bg = (70, 140, 100) if selected else BTN_BG
+        border = (100, 220, 140) if selected else BTN_BORDER
+
+        drawButton(surface, r, name, fonts["btn"], bg=bg, border=border, 
+                   hovered=r.collidepoint(mx, my) and not selected)
 
 
             # Difficulty description
 
     depthVal = DIFFICULTIES[DIFF_LABELS[state["difficulty"]]]
     descriptions = {
-        0: "looks 1 Move ahead - great for beginners.",
+        0: "Looks 1 Move ahead - great for beginners.",
         1: "Plays reasonably well; makes solid moves.",
         2: "Thinks 3 moves deep - a real challenge.",
         3: "Maximum depth - TOUGH fight. Much slower though.",}
 
-    desc = fonts["small"].render(descriptions[state["difficulty"]], True, GREY)
-    surface.blit(desc, (SCREEN_W // 2 - desc.get_width() // 2, 338))
-    depthInfo = fonts["small"].render(f"(Search depth: {depthVal})", True, GOLD_DIM)
-    surface.blit(depthInfo, (SCREEN_W // 2 - depthInfo.get_width() // 2, 362))
+    desc = fonts["small"].render(descriptions.get(state["difficulty"], ""), True, GREY)
+    surface.blit(desc, (SCREEN_W // 2 - desc.get_width() // 2, 340))
+    depthInfo = fonts["small"].render(f"(Search depth: {depthVal})", True, ACCENT_GOLD_DIM)
+    surface.blit(depthInfo, (SCREEN_W // 2 - depthInfo.get_width() // 2, 365))
 
-    btnStart = p.Rect(SCREEN_W // 2 + 20, 460, 200, 56)
-    btnBack = p.Rect(SCREEN_W // 2 - 220, 460, 180, 56)
+    btnStart = p.Rect(SCREEN_W // 2 + 30, 440, 190, 58)
+    btnBack = p.Rect(SCREEN_W // 2 - 220, 445, 170, 58)
 
 
     hS = btnStart.collidepoint(mx, my)
     hB = btnBack.collidepoint(mx, my)
 
-    drawButton(surface, btnStart, "Start Game", fonts["btn"], GREEN_SEL, GREEN_DIM, hovered=hS, radius=10)
-    drawButton(surface, btnBack,  "<- Back",        fonts["btn"], BG_DARK, GOLD_DIM, hovered=hB, radius=10)
+    drawButton(surface, btnStart, "BEGIN JOURNEY", fonts["btn"], bg=(80, 160, 100), border=(120, 200, 140), hovered=hS)
+    drawButton(surface, btnBack, "<- Back", fonts["btn"], hovered=hB)
 
 
     for e in events:
@@ -163,16 +192,15 @@ def screenAIOptions(surface, fonts, mouse, events, state):
 def runMenu():
     p.init()
     screen = p.display.set_mode((SCREEN_W, SCREEN_H))
-    p.display.set_caption("Chess")
+    p.display.set_caption("Wizard's Chess")
     clock = p.time.Clock()
 
     fonts = {
-        "title": p.font.SysFont("Georgia", 64, bold=True),
+        "title": p.font.SysFont("Georgia", 68, bold=True),
         "heading": p.font.SysFont("Georgia", 42, bold=True),
-        "sub": p.font.SysFont("Georgia", 20, bold=False, italic=True),
-        "btn": p.font.SysFont("Arial", 22, bold=True),
-        "label": p.font.SysFont("Arial", 20, bold=True),
-        "small": p.font.SysFont("Arial", 26),
+        "btn": p.font.SysFont("Georgia", 20, bold=True),
+        "label": p.font.SysFont("Georgia", 22, bold=True),
+        "small": p.font.SysFont("Georgia", 18),
     }
 
 
@@ -213,7 +241,6 @@ def runMenu():
 
                 colour = aiSettings["colour"]
                 if colour == "random":
-                    import random
                     colour = random.choice(["white", "black"])
 
                 if colour == "white":
