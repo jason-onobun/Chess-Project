@@ -393,7 +393,7 @@ def drawPromotionUI(screen, gs):
     overlay.fill((10, 8, 28, 190))
     screen.blit(overlay, (0, 0))
     
-    panelW = SQ_SIZE * 4 + 40
+    panelW = SQ_SIZE * 4 + 3 * 10 + 40
     panelH = SQ_SIZE + 90
     panelX = (BOARD_WIDTH - panelW) // 2
     panelY = (BOARD_HEIGHT - panelH) // 2
@@ -427,15 +427,18 @@ def drawPromotionUI(screen, gs):
     p.display.flip()
 
     clock = p.time.Clock()
+    piece_y = panelY + 68
     while True:
         for event in p.event.get():
             if event.type == p.QUIT:
                 return 'Q'
             if event.type == p.MOUSEBUTTONDOWN:
                 mx, my = p.mouse.get_pos()
-                if panelY <= my <= panelY + panelH:
+                if piece_y <= my <= piece_y + SQ_SIZE:
                     for i, piece in enumerate(pieces):
-                        if panelX + i * SQ_SIZE <= mx <= panelX + (i + 1) * SQ_SIZE:
+                        px = panelX + 20 + i * (SQ_SIZE + 10)
+
+                        if px <= mx <= px + SQ_SIZE:
                             return piece
         clock.tick(30)
 
@@ -817,8 +820,8 @@ def drawEndGameText(screen, text, jokeText=None):
     overlay.fill((0, 0, 0, 170))  # black with ~60% opacity
     screen.blit(overlay, (0, 0))
 
-    mainFont = p.font.SysFont("Georgia", 42, bold=True)  # fixed typo too
-    emojiFont = p.font.SysFont("Segoe UI Emoji", 28)
+    mainFont = p.font.SysFont("Georgia", 30, bold=True)  # fixed typo too
+    emojiFont = p.font.SysFont("Segoe UI Emoji", 22)
     mainObj = mainFont.render(text, True, p.Color(255, 235, 180)) #gold colour
     jokeObj = emojiFont.render(jokeText, True, p.Color(255, 215, 100)) if jokeText else None
 
