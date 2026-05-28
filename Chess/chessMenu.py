@@ -30,6 +30,25 @@ DIFFICULTIES = {
 
 DIFF_LABELS = list(DIFFICULTIES.keys())
 
+MUSIC_FILE = "Chess/sounds/titular.mp3"
+MUSIC_VOLUME = 0.4
+
+def loadBackgroundMusic():
+    try:
+        p.mixer.music.load(MUSIC_FILE)
+        p.mixer.music.set_volume(MUSIC_VOLUME)
+        p.mixer.music.play(-1) # to help loop forever
+        print(f"Background music loaded: {MUSIC_FILE}")
+    except Exception as e:
+        print("Could not load background music: {e}")
+
+def stopBackgroundMusic():
+    try:
+        p.mixer.music.stop()
+        p.mixer.music.unload()
+    except:
+        pass
+
 def drawArcaneOverlay(screen):
     overlay = p.Surface((SCREEN_W, SCREEN_H), p.SRCALPHA)
 
@@ -195,6 +214,9 @@ def runMenu():
     p.display.set_caption("Wizard's Chess")
     clock = p.time.Clock()
 
+    p.mixer.init()
+    loadBackgroundMusic()
+
     fonts = {
         "title": p.font.SysFont("Georgia", 68, bold=True),
         "heading": p.font.SysFont("Georgia", 42, bold=True),
@@ -216,6 +238,7 @@ def runMenu():
         events = p.event.get()
         for e in events:
             if e.type == p.QUIT:
+                stopBackgroundMusic()
                 p.quit()
                 sys.exit()
 
@@ -226,6 +249,7 @@ def runMenu():
         if currentScreen == "home":
             result = screenHome(screen, fonts, mouse, events)
             if result == "human":
+                stopBackgroundMusic()
                 p.quit()
                 ChessMain.main(playerOne=True, playerTwo=True)
                 return
@@ -249,6 +273,7 @@ def runMenu():
                 else:
                     playerOne, playerTwo = False, True
 
+                stopBackgroundMusic()
                 p.quit()
                 ChessMain.main(playerOne=playerOne, playerTwo=playerTwo)
                 return
