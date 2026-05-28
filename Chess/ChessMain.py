@@ -426,7 +426,7 @@ def main(playerOne=True, playerTwo=False):
     p.init()
     screen = p.display.set_mode((BOARD_WIDTH + MOVE_LOG_PANEL_WIDTH, BOARD_HEIGHT))
     clock = p.time.Clock()
-    screen.fill(p.Color("white"))
+    screen.fill(p.Color(18, 12, 32))
     moveLogFont = p.font.SysFont("Arial", 18, False, False)
     gs = ChessEngine2.GameState()
     validMoves = gs.getValidMoves()
@@ -676,33 +676,68 @@ def drawPieces(screen, board): # Draw pieces on the board
                 screen.blit(IMAGES[piece], p.Rect(c*SQ_SIZE, r*SQ_SIZE, SQ_SIZE, SQ_SIZE))
                 
 
-def drawMoveLog(screen, gs, font): # Draws the move log
-
-
+def drawMoveLog(screen, gs, font):
+    
+    # Main panel background - dark enchanted wood/leather
     moveLogRect = p.Rect(BOARD_WIDTH, 0, MOVE_LOG_PANEL_WIDTH, MOVE_LOG_PANEL_HEIGHT)
-    p.draw.rect(screen, p.Color("black"), moveLogRect)
+    p.draw.rect(screen, p.Color(22, 15, 35), moveLogRect)  # Deep mystical purple-black
+    
+    # Ornate border with magical glow
+    border_rect = moveLogRect.inflate(-8, -8)
+    p.draw.rect(screen, p.Color(140, 100, 220), border_rect, width=3, border_radius=12)
+    
+    # Inner glowing frame
+    inner_rect = moveLogRect.inflate(-18, -18)
+    p.draw.rect(screen, p.Color(80, 50, 140, 60), inner_rect, width=2, border_radius=8)
+    
+    # Title header ("Moves" or "Arcane Record")
+    title_font = p.font.SysFont("Georgia", 22, bold=True)
+    title = title_font.render("WIZARD'S LOG", True, p.Color(200, 170, 255))
+    screen.blit(title, (BOARD_WIDTH + (MOVE_LOG_PANEL_WIDTH - title.get_width()) // 2, 12))
+    
+    # Horizontal divider with runes
+    p.draw.line(screen, p.Color(140, 100, 220), 
+                (BOARD_WIDTH + 20, 48), 
+                (BOARD_WIDTH + MOVE_LOG_PANEL_WIDTH - 20, 48), 2)
+
     moveLog = gs.movelog
     moveTexts = []
     for i in range(0, len(moveLog), 2):
         moveString = str(i//2 + 1) + ". " + str(moveLog[i]) + " "
-        if i+1 < len(moveLog): # make sure black made a move
+        if i+1 < len(moveLog):
             moveString += str(moveLog[i+1]) + " "
         moveTexts.append(moveString)
+
+    # Draw moves with mystical styling
+    padding = 22
+    lineSpacing = 6
+    textY = 68
     
-    
-    movesPerRow = 3
-    padding = 5
-    lineSpacing = 2
-    textY = padding
-    for i in range(0, len(moveTexts), movesPerRow):
-        text = ""
-        for j in range(movesPerRow):
-            if i + j < len(moveTexts):
-                text += moveTexts[i+j]
-        textObject = font.render(text, True, p.Color(255, 255, 255))  # white text
-        textLocation = moveLogRect.move(padding, textY)
-        screen.blit(textObject, textLocation)
-        textY += textObject.get_height() + lineSpacing
+    for i, text in enumerate(moveTexts):
+        # Alternate subtle row shading
+        if i % 2 == 0:
+            row_bg = p.Surface((MOVE_LOG_PANEL_WIDTH - 12, 22), p.SRCALPHA)
+            row_bg.fill((60, 40, 100, 30))
+            screen.blit(row_bg, (BOARD_WIDTH + 6, textY - 2))
+        
+        # Render text with slight glow effect
+        textSurface = font.render(text, True, p.Color(235, 220, 255))
+        textLocation = (BOARD_WIDTH + padding, textY)
+        screen.blit(textSurface, textLocation)
+        
+        textY += textSurface.get_height() + lineSpacing
+        
+        # Stop if we're running out of space
+        if textY > MOVE_LOG_PANEL_HEIGHT - 40:
+            break
+
+    # Bottom decorative flourish
+    if len(moveTexts) > 0:
+        flourish_y = min(textY + 12, MOVE_LOG_PANEL_HEIGHT - 18)
+        p.draw.line(screen, p.Color(120, 80, 200, 80), 
+                    (BOARD_WIDTH + 30, flourish_y), 
+                    (BOARD_WIDTH + MOVE_LOG_PANEL_WIDTH - 30, flourish_y), 1)
+
 
 
 
