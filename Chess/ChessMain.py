@@ -485,6 +485,12 @@ def main(playerOne=True, playerTwo=False):
                     location = p.mouse.get_pos() # (x,y) location of the mouse
                     col = location[0]//SQ_SIZE
                     row = location[1]//SQ_SIZE
+
+                    isFlipped = (playerOne and playerTwo) and not gs.whiteToMove
+                    if isFlipped: # this would help in changing the orientation of the columns when black wants to play
+                        row = 7 - row
+                        col = 7 - col
+
                     if sqSelected == (row, col) or col >= 8: # This would check if the user clicked the same square twice or clicked the mouse log
                         sqSelected = () #deselect
                         playerClicks = [] # clear player clicks
@@ -596,8 +602,9 @@ def main(playerOne=True, playerTwo=False):
             animate = False
             moveUndone = False
             moveGivesCheck = False
-
-        drawGameState(screen, gs, validMoves, sqSelected, moveLogFont)
+        isFlipped = (playerOne and playerTwo) and not gs.whiteToMove # help to flip only in human vs human mode
+        drawGameState(screen, gs, validMoves, sqSelected, moveLogFont, isFlipped)
+        
         if gs.checkmate or gs.stalemate:
             if not gameOver:
                 if gs.checkmate:
@@ -618,25 +625,27 @@ def main(playerOne=True, playerTwo=False):
         p.display.flip()
 
 #Responsible for all the graphic with a current game state
-def drawGameState(screen, gs, validMoves, sqSelected, moveLogFont):
-    drawBoard(screen) # Draw the swaureson the board
+def drawGameState(screen, gs, validMoves, sqSelected, moveLogFont, isFlipped=False):
+    drawBoard(screen, isFlipped) # Draw the swaureson the board
     drawArcaneOverlay(screen)
-    drawPieces(screen, gs.board) # draw pieces on top of the squares
-    highlightSquares(screen, gs, validMoves, sqSelected)
+    drawPieces(screen, gs.board, isFlipped) # draw pieces on top of the squares
+    highlightSquares(screen, gs, validMoves, sqSelected, isFlipped)
     drawMoveLog(screen, gs, moveLogFont)
 
 
 
 
-def drawBoard(screen):
+def drawBoard(screen, flipped=False):
     GLOW_COLOR = p.Color(180, 120, 255, 40)  # Subtle magical glow
 
     for r in range(DIMENSION):
         for c in range(DIMENSION):
+            display_r = (7 - r) if flipped else r
+            display_c = (7 - c) if flipped else c
             is_light = (r + c) % 2 == 0
             base_color = BOARD_LIGHT_SQ if is_light else BOARD_DARK_SQ
             
-            rect = p.Rect(c * SQ_SIZE, r * SQ_SIZE, SQ_SIZE, SQ_SIZE)
+            rect = p.Rect(display_c * SQ_SIZE, display_r * SQ_SIZE, SQ_SIZE, SQ_SIZE)
             p.draw.rect(screen, base_color, rect)
             
             # Add subtle inner glow/border for magical feel
@@ -644,7 +653,7 @@ def drawBoard(screen):
                 glow_rect = rect.inflate(-6, -6)
                 s = p.Surface((SQ_SIZE, SQ_SIZE), p.SRCALPHA)
                 p.draw.rect(s, GLOW_COLOR, glow_rect, border_radius=4)
-                screen.blit(s, (c * SQ_SIZE, r * SQ_SIZE))
+                screen.blit(s, (display_c * SQ_SIZE, display_r * SQ_SIZE))
 
 
 _STAR_POSITIONS = [(random.randint(0, BOARD_WIDTH), random.randint(0, BOARD_HEIGHT),
@@ -667,18 +676,23 @@ def drawArcaneOverlay(screen):
 
 
 # Highlight the square selected and moves for the piece selected
-def highlightSquares(screen, gs, validMoves, sqSelected):
+def highlightSquares(screen, gs, validMoves, sqSelected, flipped=False):
     if sqSelected != ():
         r, c = sqSelected
         if gs.board[r][c][0] == ("w" if gs.whiteToMove else "b"): #sqselected is a piece that can be movd
+            display_r = (7 - r) if flipped else r
+            display_c = (7 - c) if flipped else c
+            
             #highlight selected square
             s = p.Surface((SQ_SIZE, SQ_SIZE))
             s.set_alpha(120) # Transparency value
             s.fill(p.Color(205, 170, 0))
-            screen.blit(s, (c*SQ_SIZE, r*SQ_SIZE))
+            screen.blit(s, (display_c*SQ_SIZE, display_r*SQ_SIZE))
             # highlight moves from that square
             for move in validMoves:
                 if move.startRow == r and move.startCol == c:
+                    move_display_r = (7 - move.endRow) if flipped else move.endRow
+                    move_display_c = (7 - move.endCol) if flipped else move.endCol
                     dot_surface = p.Surface((SQ_SIZE, SQ_SIZE), p.SRCALPHA)
                     p.draw.circle(
                         dot_surface,
@@ -686,16 +700,18 @@ def highlightSquares(screen, gs, validMoves, sqSelected):
                         (SQ_SIZE // 2, SQ_SIZE // 2),
                         SQ_SIZE //6
                     )
-                    screen.blit(dot_surface, (move.endCol * SQ_SIZE, move.endRow * SQ_SIZE))
+                    screen.blit(dot_surface, (move_display_c * SQ_SIZE, move_display_r * SQ_SIZE))
 
 
 
-def drawPieces(screen, board): # Draw pieces on the board
+def drawPieces(screen, board, flipped=False): # Draw pieces on the board
     for r in range(DIMENSION):
         for c in range(DIMENSION):
             piece = board[r][c]
             if piece != "--": # not an empty sqaure
-                screen.blit(IMAGES[piece], p.Rect(c*SQ_SIZE, r*SQ_SIZE, SQ_SIZE, SQ_SIZE))
+                display_r = (7 - r) if flipped else r
+                display_c = (7 - c) if flipped else c
+                screen.blit(IMAGES[piece], p.Rect(display_c*SQ_SIZE, display_r*SQ_SIZE, SQ_SIZE, SQ_SIZE))
                 
 
 def drawMoveLog(screen, gs, font):
