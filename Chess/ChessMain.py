@@ -49,7 +49,8 @@ def loadSounds():
         "capture": "Chess/sounds/capturePiece.wav",
         "check": "Chess/sounds/kingInCheck.wav",
         "checkmate": "Chess/sounds/checkMateWin.ogg",
-        "move": "Chess/sounds/pieceSlide.mp3"
+        "move": "Chess/sounds/pieceSlide.mp3",
+        "promotion": "Chess/sounds/pawnPromote.wav",
     }
     for name, path in sound_files.items():
         try:
@@ -384,6 +385,80 @@ def animateResolveCheckEffect(screen, move, board, clock):
 
 
 
+def animatePromotionEffect(screen, move, board, clock):
+    cx = move.endCol * SQ_SIZE + SQ_SIZE // 2
+    cy = move.endRow * SQ_SIZE + SQ_SIZE // 2
+    color = (255, 215, 100)  # Golden sparkle
+    FRAMES = 45
+
+    # Create many sparkling particles
+    particles = []
+    for _ in range(45):
+        angle = random.uniform(0, 2 * math.pi)
+        speed = random.uniform(2.5, 8.5)
+        particles.append({
+            'x': float(cx),
+            'y': float(cy),
+            'vx': math.cos(angle) * speed,
+            'vy': math.sin(angle) * speed,
+            'life': 1.0,
+            'decay': random.uniform(0.035, 0.065),
+            'size': random.randint(3, 7),
+            'hue_shift': random.randint(-30, 30)
+        })
+
+    for frame in range(FRAMES):
+        t = frame / FRAMES
+        drawBoard(screen)
+        drawPieces(screen, board)
+
+        # Central glow burst
+        if frame < 18:
+            glow_size = int(SQ_SIZE * 0.8 * (1 - frame / 18))
+            glow_alpha = int(180 * (1 - frame / 18))
+            glow = p.Surface((glow_size * 2, glow_size * 2), p.SRCALPHA)
+            p.draw.circle(glow, (*color, glow_alpha), (glow_size, glow_size), glow_size)
+            screen.blit(glow, (cx - glow_size, cy - glow_size))
+
+        # Sparkle particles
+        alive = []
+        for pt in particles:
+            pt['x'] += pt['vx']
+            pt['y'] += pt['vy']
+            pt['vy'] += 0.18  # gravity
+            pt['life'] -= pt['decay']
+            pt['vx'] *= 0.985
+            pt['vy'] *= 0.985
+
+            if pt['life'] > 0:
+                alpha = int(255 * pt['life'])
+                sz = int(pt['size'] * pt['life'])
+                if sz > 0:
+                    s = p.Surface((sz * 2 + 2, sz * 2 + 2), p.SRCALPHA)
+                    spark_color = (
+                        min(255, color[0] + pt['hue_shift']),
+                        min(255, color[1] + pt['hue_shift']//2),
+                        255
+                    )
+                    p.draw.circle(s, (*spark_color, alpha), (sz+1, sz+1), sz)
+                    # Extra bright core
+                    p.draw.circle(s, (255, 255, 240, alpha), (sz+1, sz+1), max(1, sz//2))
+                    screen.blit(s, (int(pt['x']) - sz - 1, int(pt['y']) - sz - 1))
+                alive.append(pt)
+
+        particles = alive
+
+        # Occasional bright flashes
+        if frame % 6 == 0 and frame < 30:
+            flash = p.Surface((SQ_SIZE * 2, SQ_SIZE * 2), p.SRCALPHA)
+            p.draw.circle(flash, (255, 240, 180, 80), (SQ_SIZE, SQ_SIZE), SQ_SIZE)
+            screen.blit(flash, (cx - SQ_SIZE, cy - SQ_SIZE))
+
+        p.display.flip()
+        clock.tick(60)
+
+
+
 
 def drawPromotionUI(screen, gs):
     pieces = ['Q', 'R', 'B', 'N']
@@ -592,7 +667,10 @@ def main(playerOne=True, playerTwo=False):
                     # player escaped / blocked check without capturing
                     animateResolveCheckEffect(screen, move, gs.board, clock)
  
-            
+                
+                elif move.isPawnPromotion:
+                    playSound("promotion")
+                    animatePromotionEffect(screen, move, gs.board, clock)
                 else:
                     playSound("move")
             
