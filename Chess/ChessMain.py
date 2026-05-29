@@ -527,7 +527,7 @@ def main(playerOne=True, playerTwo=False):
     screen.fill(p.Color(18, 12, 32))
     moveLogFont = p.font.SysFont("Georgia", 17)
     gs = ChessEngine2.GameState()
-    validMoves = gs.validMoves()
+    validMoves = gs.validMovesFinder()
     moveMade = False #flgag variable for when a move is made
     animate = False # Flag variable for when we should animate a move
 
@@ -618,7 +618,7 @@ def main(playerOne=True, playerTwo=False):
                     moveUndone = True
                 if e.key == p.K_r:
                     gs = ChessEngine2.GameState()
-                    validMoves = gs.validMoves()
+                    validMoves = gs.validMovesFinder()
                     sqSelected = ()
                     playerClicks = []
                     moveMade = False
@@ -643,7 +643,7 @@ def main(playerOne=True, playerTwo=False):
             if not moveFinderProcess.is_alive():
                 AIMove = returnQueue.get()
                 if AIMove is None:
-                    AIMove = chessAI.findRandomMove(validMoves)
+                    AIMove = chessAI.randomMoveFinder(validMoves)
                 AIMove.setDisambiguation(validMoves)
                 gs.makeMove(AIMove)
                 moveGivesCheck = gs.inCheck()
@@ -674,7 +674,7 @@ def main(playerOne=True, playerTwo=False):
                 else:
                     playSound("move")
             
-            validMoves = gs.validMoves()
+            validMoves = gs.validMovesFinder()
             currentPlayerInCheck = gs.inCheck()
             
             if moveGivesCheck and not gs.checkmate and not gs.stalemate:

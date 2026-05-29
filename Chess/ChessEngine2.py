@@ -158,7 +158,7 @@ class GameState():
 
     # All moves considering checks
 
-    def validMoves(self):
+    def validMovesFinder(self):
         temporaryEnpassantPossible = self.enpassantPossible  # This would help save the value for when we are generating our moves
         temporaryCastleRights = CastleAbility(self.currentCastlingRights.wks, self.currentCastlingRights.bks,
                                              self.currentCastlingRights.wqs, self.currentCastlingRights.bqs) # Copy the current castling rights
@@ -352,7 +352,7 @@ class GameState():
         if (self.whiteToMove and self.currentCastlingRights.wks) or (not self.whiteToMove and self.currentCastlingRights.bks):
             self.kingsidecastleMoves(r, c, moves)
         if (self.whiteToMove and self.currentCastlingRights.wqs) or (not self.whiteToMove and self.currentCastlingRights.bqs):
-            self.getQueensideCastleMoves(r, c, moves)
+            self.queensideCastleMoves(r, c, moves)
 
 
 
@@ -361,7 +361,7 @@ class GameState():
             if not self.squareUnderAttack(r, c+1) and not self.squareUnderAttack(r, c+2):
                 moves.append(Move((r, c), (r, c+2), self.board, isCastleMove=True))
 
-    def getQueensideCastleMoves(self, r, c, moves):
+    def queensideCastleMoves(self, r, c, moves):
         if self.board[r][c-1] == "--" and self.board[r][c-2] == "--" and self.board[r][c-3] == "--":
             if not self.squareUnderAttack(r, c-1) and not self.squareUnderAttack(r, c-2):
                 moves.append(Move((r, c), (r, c-2), self.board, isCastleMove=True)) 
