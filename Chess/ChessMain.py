@@ -49,6 +49,7 @@ def loadSounds():
         "capture": "Chess/sounds/capturePiece.wav",
         "check": "Chess/sounds/kingInCheck.wav",
         "checkmate": "Chess/sounds/checkMateWin.ogg",
+        "move": "Chess/sounds/pieceSlide.mp3"
     }
     for name, path in sound_files.items():
         try:
@@ -591,6 +592,10 @@ def main(playerOne=True, playerTwo=False):
                     # player escaped / blocked check without capturing
                     animateResolveCheckEffect(screen, move, gs.board, clock)
  
+            
+                else:
+                    playSound("move")
+            
             validMoves = gs.getValidMoves()
             currentPlayerInCheck = gs.inCheck()
             
