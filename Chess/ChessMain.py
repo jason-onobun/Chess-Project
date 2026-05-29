@@ -304,7 +304,7 @@ def animateCaptureEffect(screen, move, board, clock):
     if fn:
         fn()
 
-def getCheckingPieces(gs):
+def checkingPieces(gs):
     if gs.whiteToMove:
         kingR, kingC = gs.whiteKingLocation
     else:
@@ -325,7 +325,7 @@ def getCheckingPieces(gs):
     return checkers, (kingR, kingC)
 
 def animateCheckEffect(screen, gs, board, clock): # We are going to be using a white beam
-    checkers, (kingR, kingC) = getCheckingPieces(gs)
+    checkers, (kingR, kingC) = checkingPieces(gs)
     if not checkers:
         return
     
@@ -527,7 +527,7 @@ def main(playerOne=True, playerTwo=False):
     screen.fill(p.Color(18, 12, 32))
     moveLogFont = p.font.SysFont("Georgia", 17)
     gs = ChessEngine2.GameState()
-    validMoves = gs.getValidMoves()
+    validMoves = gs.validMoves()
     moveMade = False #flgag variable for when a move is made
     animate = False # Flag variable for when we should animate a move
 
@@ -575,7 +575,7 @@ def main(playerOne=True, playerTwo=False):
                         playerClicks.append(sqSelected) #Appened for both 1st and 2nd clicks
                     if len(playerClicks) == 2:
                         move = ChessEngine2.Move(playerClicks[0], playerClicks[1], gs.board)
-                        print(move.getChessNotation())
+                        print(move.chessNotation())
 
                         # If the clicked move is a pawn promotion, ask the human which piece
                         if move.isPawnPromotion:
@@ -604,7 +604,7 @@ def main(playerOne=True, playerTwo=False):
             # Key handler
             elif e.type == p.KEYDOWN:
                 if e.key == p.K_z: #Undo when 'z' is pressed
-                    gs.undoMove()
+                    gs.helpUndoMove()
                     sqSelected = ()
                     playerClicks = []
                     moveMade = True
@@ -618,7 +618,7 @@ def main(playerOne=True, playerTwo=False):
                     moveUndone = True
                 if e.key == p.K_r:
                     gs = ChessEngine2.GameState()
-                    validMoves = gs.getValidMoves()
+                    validMoves = gs.validMoves()
                     sqSelected = ()
                     playerClicks = []
                     moveMade = False
@@ -674,7 +674,7 @@ def main(playerOne=True, playerTwo=False):
                 else:
                     playSound("move")
             
-            validMoves = gs.getValidMoves()
+            validMoves = gs.validMoves()
             currentPlayerInCheck = gs.inCheck()
             
             if moveGivesCheck and not gs.checkmate and not gs.stalemate:
